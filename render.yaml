@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: bez-szumu
+    runtime: node
+    plan: starter
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://bez-szumu.pl
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SUPADATA_API_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: anthropic
+      - key: AI_MODEL
+        value: claude-sonnet-5-5
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: BATCH_SIZE
+        value: 5
+      - key: AUTO_PUBLISH
+        value: "false"
+
+  # Cykliczne wywołanie endpointu przetwarzania (co 20 min).
+  - type: cron
+    name: bez-szumu-process-videos
+    runtime: node
+    plan: starter
+    region: frankfurt
+    schedule: "*/20 * * * *"
+    buildCommand: "true"
+    startCommand: >-
+      curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET"
+      "$APP_URL/api/cron/process-videos"
+    envVars:
+      - key: APP_URL
+        value: https://bez-szumu.onrender.com
+      - key: CRON_SECRET
+        sync: false
