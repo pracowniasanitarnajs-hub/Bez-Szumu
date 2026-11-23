@@ -61,7 +61,7 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
     )
     .eq("status", "published")
     .order("published_at", { ascending: false })
-    .limit(30);
+    .limit(200);
   if (error || !data) return { items: [], demo: false };
 
   const items: RankedVideo[] = data.flatMap((v: any) => {
