@@ -8,10 +8,10 @@ type Range = "all" | "24h" | "week" | "month";
 type Sort = "score" | "date";
 
 const RANGES: { key: Range; label: string; ms: number }[] = [
-  { key: "all", label: "Wszystko", ms: Infinity },
-  { key: "24h", label: "Ostatnie 24h", ms: 24 * 3600e3 },
+  { key: "24h", label: "Dziś", ms: 24 * 3600e3 }, // ostatnie 24 godziny
   { key: "week", label: "Tydzień", ms: 7 * 24 * 3600e3 },
   { key: "month", label: "Miesiąc", ms: 30 * 24 * 3600e3 },
+  { key: "all", label: "Wszystkie", ms: Infinity },
 ];
 
 // Wyszukiwanie bez rozróżniania wielkości liter i polskich znaków.
@@ -49,6 +49,17 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 14);
   }, [items]);
 
+  // Liczba wywiadów w każdej zakładce (przed filtrami tagów i wyszukiwarki).
+  const rangeCounts = useMemo(() => {
+    const out = {} as Record<Range, number>;
+    for (const r of RANGES) {
+      out[r.key] = items.filter(
+        (v) => now === null || now - new Date(v.publishedAt).getTime() <= r.ms,
+      ).length;
+    }
+    return out;
+  }, [items, now]);
+
   const shown = useMemo(() => {
     const maxAge = RANGES.find((r) => r.key === range)!.ms;
     const q = norm(query.trim());
@@ -74,6 +85,30 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
   return (
     <div>
       <div className="mb-5 space-y-3">
+        <div role="tablist" aria-label="Zakres czasu" className="grid grid-cols-4 border-b border-border">
+          {RANGES.map((r) => {
+            const active = range === r.key;
+            return (
+              <button
+                key={r.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setNow(Date.now());
+                  setRange(r.key);
+                }}
+                className={`-mb-px min-h-12 border-b-2 px-1 text-sm font-semibold transition-colors sm:text-base ${
+                  active ? "border-accent text-accent" : "border-transparent text-muted hover:text-foreground"
+                }`}
+              >
+                {r.label}
+                <span className="ml-1 text-xs font-normal opacity-70">{rangeCounts[r.key]}</span>
+              </button>
+            );
+          })}
+        </div>
+
         <input
           type="search"
           value={query}
@@ -82,17 +117,6 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
           aria-label="Szukaj wywiadów"
           className="min-h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-accent"
         />
-
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Zakres czasu">
-          {RANGES.map((r) => (
-            <button key={r.key} type="button" className={chip(range === r.key)} onClick={() => {
-                setNow(Date.now());
-                setRange(r.key);
-              }}>
-              {r.label}
-            </button>
-          ))}
-        </div>
 
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Tagi">
