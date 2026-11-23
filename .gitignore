@@ -42,3 +42,6 @@ next-env.d.ts
 
 # ale .env.example commitujemy (bez prawdziwych kluczy)
 !.env.example
+
+# artefakty budowania w dowolnym podkatalogu
+**/.next/
