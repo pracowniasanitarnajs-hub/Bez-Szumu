@@ -1,6 +1,6 @@
 # Bez Szumu (bez-szumu.pl)
 
-Polski serwis-kurator: automatycznie ocenia i rankinguje merytoryczne wywiady geopolityczne (>20 min) z wybranych polskich kanałów YouTube. Zamiast clickbaitów użytkownik dostaje ranking jakości, wnioski i znaczniki czasu.
+Polski serwis-kurator: automatycznie ocenia i rankinguje merytoryczne wywiady geopolityczne (wszystkie filmy z kanałów, min. 60 s — odfiltrowuje Shorts; `MIN_DURATION_SECONDS`) z wybranych polskich kanałów YouTube. Zamiast clickbaitów użytkownik dostaje ranking jakości, wnioski i znaczniki czasu.
 
 ## Zakres
 - **Tylko strona WWW** (mobile-first, PWA: instalowalna z przeglądarki). Natywna aplikacja iOS/Android — dopiero później (np. Capacitor). Wtedy subskrypcje w sklepach muszą iść przez zakupy Apple/Google (RevenueCat), dlatego `profiles.subscription_status` ma być zasilane z wielu źródeł (Stripe web, później RevenueCat).

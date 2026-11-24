@@ -17,7 +17,7 @@ export type ProcessReport = {
 
 export async function processVideos(): Promise<ProcessReport> {
   const db = createAdminClient();
-  const minDuration = parseInt(process.env.MIN_DURATION_SECONDS ?? "1200", 10);
+  const minDuration = parseInt(process.env.MIN_DURATION_SECONDS ?? "60", 10);
   const batchSize = parseInt(process.env.BATCH_SIZE ?? "5", 10);
   const autoPublish = process.env.AUTO_PUBLISH === "true";
   const report: ProcessReport = { discovered: 0, skipped: 0, queued: 0, processed: 0, failed: 0, errors: [] };

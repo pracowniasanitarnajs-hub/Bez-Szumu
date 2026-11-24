@@ -28,7 +28,7 @@ export default async function Home() {
             Najlepsze polskie wywiady geopolityczne. Bez clickbaitów.
           </p>
           <p className="mt-2 text-muted">
-            Codziennie oceniamy nowe rozmowy powyżej 20 minut: merytoryka, zgodność tytułu z treścią, wnioski i znaczniki czasu.
+            Codziennie oceniamy nowe rozmowy z polskich kanałów: merytoryka, zgodność tytułu z treścią, wnioski i znaczniki czasu.
           </p>
           <div className="mt-4 rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm">
             Zaloguj się przez Google lub Apple i testuj pełny dostęp za darmo przez 30 dni (bez podawania karty).

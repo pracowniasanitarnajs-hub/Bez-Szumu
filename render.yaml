@@ -38,7 +38,9 @@ services:
       - key: BATCH_SIZE
         value: 5
       - key: AUTO_PUBLISH
-        value: "false"
+        value: "true"
+      - key: MIN_DURATION_SECONDS
+        value: "60"
 
   # Cykliczne wywołanie endpointu przetwarzania (co 20 min).
   - type: cron
