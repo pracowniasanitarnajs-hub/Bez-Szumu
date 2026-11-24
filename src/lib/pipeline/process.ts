@@ -24,6 +24,13 @@ export async function processVideos(): Promise<ProcessReport> {
   if (!Number.isFinite(minDuration)) throw new Error("Nieprawidłowe MIN_DURATION_SECONDS");
   const report: ProcessReport = { discovered: 0, skipped: 0, queued: 0, processed: 0, failed: 0, errors: [] };
 
+  // 0) Film zawieszony w "processing" (np. przerwany restartem serwera) wraca do kolejki po 20 minutach.
+  await db
+    .from("videos")
+    .update({ status: "queued", updated_at: new Date().toISOString() })
+    .eq("status", "processing")
+    .lt("updated_at", new Date(Date.now() - 20 * 60e3).toISOString());
+
   // 1) RSS -> nowe filmy (status discovered). Błąd jednego kanału nie przerywa reszty.
   const { data: channels, error: chErr } = await db.from("channels").select("id, youtube_channel_id, name").eq("active", true);
   if (chErr) throw chErr;
