@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fetchChannelFeed } from "./rss";
+import { fetchChannelFeed, fetchRecentUploads } from "./rss";
 import { fetchVideoMeta } from "./youtube";
 import { fetchTranscript, transcriptToPromptText } from "./transcript";
 import { analyzeTranscript } from "./analyze";
@@ -29,7 +29,8 @@ export async function processVideos(): Promise<ProcessReport> {
   if (chErr) throw chErr;
   for (const ch of channels ?? []) {
     try {
-      const feed = await fetchChannelFeed(ch.youtube_channel_id);
+      // Najpierw YouTube API (30 ostatnich filmów); gdy zawiedzie — RSS (15).
+      const feed = await fetchRecentUploads(ch.youtube_channel_id, 30).catch(() => fetchChannelFeed(ch.youtube_channel_id));
       if (feed.length === 0) continue;
       const ids = feed.map((v) => v.youtubeVideoId);
       const { data: existing } = await db.from("videos").select("youtube_video_id").in("youtube_video_id", ids);
@@ -85,7 +86,11 @@ export async function processVideos(): Promise<ProcessReport> {
     .order("published_at", { ascending: false })
     .limit(batchSize);
 
+  let first = true;
   for (const v of batch ?? []) {
+    // Pauza między filmami, żeby nie przekraczać limitu zapytań Supadata (HTTP 429).
+    if (!first) await new Promise((r) => setTimeout(r, 3000));
+    first = false;
     await db.from("videos").update({ status: "processing", updated_at: new Date().toISOString() }).eq("id", v.id);
     try {
       const segments = await fetchTranscript(v.youtube_video_id);
