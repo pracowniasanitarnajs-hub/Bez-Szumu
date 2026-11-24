@@ -5,12 +5,12 @@ import { processVideos } from "@/lib/pipeline/process";
 export const maxDuration = 300;
 
 function authorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
+  // trim(): przy wklejaniu do panelu Rendera łatwo dołączyć niewidoczną spację lub nową linię.
+  const secret = process.env.CRON_SECRET?.trim();
   if (!secret) return false;
-  const given = req.headers.get("authorization") ?? "";
-  const expected = `Bearer ${secret}`;
+  const given = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
   const a = Buffer.from(given);
-  const b = Buffer.from(expected);
+  const b = Buffer.from(secret);
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
