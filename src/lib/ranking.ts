@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { cacheLife, cacheTag } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type RankedVideo = {
   id: string;
@@ -57,7 +58,11 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return { items: DEMO, demo: true };
 
-  const db = createClient(url, key, { auth: { persistSession: false } });
+  // Dopóki nie ma logowania i paywalla, strona publiczna pokazuje wszystkie opublikowane filmy
+  // (odczyt po stronie serwera). Po wdrożeniu logowania ustaw PUBLIC_SHOW_ALL=false: wtedy goście
+  // widzą tylko 3 najnowsze (reguła RLS w bazie), a pełną listę dostają zalogowani.
+  const showAll = process.env.PUBLIC_SHOW_ALL !== "false" && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const db = showAll ? createAdminClient() : createClient(url, key, { auth: { persistSession: false } });
   const { data, error } = await db
     .from("videos")
     .select(

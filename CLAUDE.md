@@ -55,3 +55,6 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Wideo pokazujemy oficjalnym odtwarzaczem YouTube (youtube-nocookie embed), bez kopiowania miniatur. Transkrypcji nie publikujemy.
 - Stopka: adnotacja o automatycznej, subiektywnej ocenie + link do zgłaszania sprostowań, jeśli ustawiono `NEXT_PUBLIC_CONTACT_EMAIL` (dodać w Render → Environment).
 - DO ZROBIENIA przed płatnym startem: regulamin, polityka prywatności, procedura sprostowań, konsultacja z prawnikiem (prawo autorskie/media).
+
+## Podgląd publiczny
+- `PUBLIC_SHOW_ALL` (domyślnie włączone): strona główna pokazuje wszystkie opublikowane filmy, bo nie ma jeszcze logowania. **Po wdrożeniu logowania/paywalla ustawić `PUBLIC_SHOW_ALL=false`** — goście zobaczą wtedy tylko 3 najnowsze (reguła RLS), pełną listę zalogowani z dostępem.
