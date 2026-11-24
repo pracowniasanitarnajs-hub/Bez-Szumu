@@ -98,7 +98,14 @@ export async function processVideos(): Promise<ProcessReport> {
     // Pauza między filmami, żeby nie przekraczać limitu zapytań Supadata (HTTP 429).
     if (!first) await new Promise((r) => setTimeout(r, 3000));
     first = false;
-    await db.from("videos").update({ status: "processing", updated_at: new Date().toISOString() }).eq("id", v.id);
+    // Atomowe przejęcie filmu: jeśli inny przebieg zdążył go wziąć, pomijamy go.
+    const { data: claimed } = await db
+      .from("videos")
+      .update({ status: "processing", updated_at: new Date().toISOString() })
+      .eq("id", v.id)
+      .eq("status", "queued")
+      .select("id");
+    if (!claimed || claimed.length === 0) continue;
     try {
       const segments = await fetchTranscript(v.youtube_video_id);
       const channelName = (v as any).channels?.name ?? "";
