@@ -1,6 +1,6 @@
 # Bez Szumu (bez-szumu.pl)
 
-Polski serwis-kurator: automatycznie ocenia i rankinguje merytoryczne wywiady geopolityczne (wszystkie filmy z kanałów, min. 60 s — odfiltrowuje Shorts; `MIN_DURATION_SECONDS`) z wybranych polskich kanałów YouTube. Zamiast clickbaitów użytkownik dostaje ranking jakości, wnioski i znaczniki czasu.
+Polski serwis-kurator: automatycznie ocenia i rankinguje merytoryczne wywiady geopolityczne (wszystkie filmy z kanałów, min. 5 min, `MIN_DURATION_SECONDS=300` — odfiltrowuje Shorts i klipy) z wybranych polskich kanałów YouTube. Zamiast clickbaitów użytkownik dostaje ranking jakości, wnioski i znaczniki czasu.
 
 ## Zakres
 - **Tylko strona WWW** (mobile-first, PWA: instalowalna z przeglądarki). Natywna aplikacja iOS/Android — dopiero później (np. Capacitor). Wtedy subskrypcje w sklepach muszą iść przez zakupy Apple/Google (RevenueCat), dlatego `profiles.subscription_status` ma być zasilane z wielu źródeł (Stripe web, później RevenueCat).
@@ -48,3 +48,10 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Env vars: patrz `.env.example`.
 - Migracje SQL: `supabase/migrations/`.
 - Kod pipeline: `src/lib/pipeline/`.
+
+## Publikacja i ryzyko prawne (ustalenia)
+- `AUTO_PUBLISH=true`: ocenione filmy wchodzą na stronę same. **Wyjątek — wstrzymane do akceptacji redaktora (status `pending`)**: ocena AI < `REVIEW_BELOW_SCORE` (domyślnie 4) albo clickbait „Wysoki" (najbardziej wrażliwa etykieta przy nazwanym twórcy).
+- Prompt (analyze.ts) wymusza neutralność: oceniamy materiał, nie osoby; zakaz ocen intencji/uczciwości (kłamstwo, manipulacja, dezinformacja…); cudze tezy relacjonujemy z przypisaniem.
+- Wideo pokazujemy oficjalnym odtwarzaczem YouTube (youtube-nocookie embed), bez kopiowania miniatur. Transkrypcji nie publikujemy.
+- Stopka: adnotacja o automatycznej, subiektywnej ocenie + link do zgłaszania sprostowań, jeśli ustawiono `NEXT_PUBLIC_CONTACT_EMAIL` (dodać w Render → Environment).
+- DO ZROBIENIA przed płatnym startem: regulamin, polityka prywatności, procedura sprostowań, konsultacja z prawnikiem (prawo autorskie/media).

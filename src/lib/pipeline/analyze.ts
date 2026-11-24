@@ -31,6 +31,11 @@ Zwróć WYŁĄCZNIE obiekt JSON (bez markdown) o polach:
 - "timestamps": 5-10 obiektów {"t": sekundy_od_początku (liczba całkowita), "label": krótki opis} — najciekawsze momenty; podawaj tylko czasy, które faktycznie wynikają z markerów.
 - "guest": imię i nazwisko gościa lub null, jeśli nie da się ustalić.
 - "tags": 2-6 tagów z #, np. #Bałtyk #USA #Chiny #Ukraina #Rosja #Energetyka #Wojsko #Historia #NATO #UE.
+ZASADY NEUTRALNOŚCI (obowiązkowe, dotyczą "clickbait_note", "summary" i etykiet):
+- Oceniasz MATERIAŁ, nigdy osoby. Nie oceniaj intencji, uczciwości, wiarygodności ani motywów prowadzącego, gościa ani kanału. Zakazane są słowa i sugestie typu: kłamstwo, manipulacja, dezinformacja, propaganda, oszustwo, wprowadzanie w błąd, celowe.
+- "clickbait_note" opisuje wyłącznie porównanie: co obiecuje tytuł i czy rozmowa to potwierdza (np. "Tytuł zapowiada X; w rozmowie X zajmuje ok. Y czasu, a pozostała część dotyczy Z.").
+- Cudze twierdzenia relacjonuj z przypisaniem ("według prowadzącego", "gość uważa"), nie podawaj ich jako ustalonych faktów. Jeśli twierdzenie jest sporne lub niepotwierdzone w rozmowie, zaznacz to wprost.
+- Nie dodawaj informacji spoza transkrypcji i nie uzupełniaj faktów z własnej wiedzy.
 Odpowiadaj po polsku.`;
 
 export async function analyzeTranscript(opts: {

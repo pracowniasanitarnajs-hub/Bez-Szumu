@@ -39,8 +39,10 @@ services:
         value: 5
       - key: AUTO_PUBLISH
         value: "true"
+      - key: REVIEW_BELOW_SCORE
+        value: "4"
       - key: MIN_DURATION_SECONDS
-        value: "60"
+        value: "300"
 
   # Cykliczne wywołanie endpointu przetwarzania (co 20 min).
   - type: cron

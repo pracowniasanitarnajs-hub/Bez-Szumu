@@ -55,7 +55,7 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
   for (const v of all ?? []) counts[v.status] = (counts[v.status] ?? 0) + 1;
 
   const groups: { key: string; label: string }[] = [
-    { key: "pending", label: "Oczekujące na publikację" },
+    { key: "pending", label: "Do Twojej akceptacji (niska ocena lub wysoki clickbait)" },
     { key: "published", label: "Opublikowane" },
     { key: "failed", label: "Błędy" },
     { key: "queued", label: "W kolejce" },
@@ -123,6 +123,18 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
                     <a className="underline" target="_blank" rel="noopener noreferrer" href={`https://www.youtube.com/watch?v=${v.youtube_video_id}`}>YouTube</a>
                   </p>
                   {v.error && <p className="mt-1 text-xs text-rose-600">Błąd: {v.error}</p>}
+                  {a && v.status === "pending" && (
+                    <p className="mt-2 text-xs text-amber-600">
+                      Wstrzymany do akceptacji:{" "}
+                      {[
+                        Number(a.ai_score) < Number(process.env.REVIEW_BELOW_SCORE ?? "4") ? "niska ocena AI" : null,
+                        a.clickbait_level === "Wysoki" ? "clickbait: Wysoki" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "ręczna decyzja"}
+                      .
+                    </p>
+                  )}
                   {a && (
                     <>
                       <p className="mt-2 text-sm">

@@ -17,9 +17,11 @@ export type ProcessReport = {
 
 export async function processVideos(): Promise<ProcessReport> {
   const db = createAdminClient();
-  const minDuration = parseInt(process.env.MIN_DURATION_SECONDS ?? "60", 10);
+  const minDuration = parseInt(process.env.MIN_DURATION_SECONDS ?? "300", 10);
   const batchSize = parseInt(process.env.BATCH_SIZE ?? "5", 10);
   const autoPublish = process.env.AUTO_PUBLISH === "true";
+  const reviewBelow = parseFloat(process.env.REVIEW_BELOW_SCORE ?? "4");
+  if (!Number.isFinite(minDuration)) throw new Error("Nieprawidłowe MIN_DURATION_SECONDS");
   const report: ProcessReport = { discovered: 0, skipped: 0, queued: 0, processed: 0, failed: 0, errors: [] };
 
   // 1) RSS -> nowe filmy (status discovered). Błąd jednego kanału nie przerywa reszty.
@@ -108,9 +110,11 @@ export async function processVideos(): Promise<ProcessReport> {
         model,
       });
       if (aErr) throw aErr;
+      // Niska ocena albo "Wysoki" clickbait (najbardziej wrażliwa etykieta) wymagają akceptacji redaktora.
+      const needsReview = analysis.score < reviewBelow || analysis.clickbaitLevel === "Wysoki";
       await db
         .from("videos")
-        .update({ status: autoPublish ? "published" : "pending", error: null, updated_at: new Date().toISOString() })
+        .update({ status: autoPublish && !needsReview ? "published" : "pending", error: null, updated_at: new Date().toISOString() })
         .eq("id", v.id);
       report.processed++;
     } catch (e) {

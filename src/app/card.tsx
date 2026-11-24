@@ -36,34 +36,18 @@ export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => vo
         </div>
       </div>
 
-      <a
-        href={yt}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Obejrzyj na YouTube: ${v.title}`}
-        className="group relative mt-4 block aspect-video overflow-hidden rounded-xl bg-border"
-      >
-        {/* hqdefault ma czarne pasy u góry i u dołu; object-cover w ramce 16:9 je odcina */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`https://i.ytimg.com/vi/${v.youtubeVideoId}/hqdefault.jpg`}
-          alt={v.title}
+      {/* Oficjalny odtwarzacz YouTube (embed) — pokazuje własną okładkę filmu, bez kopiowania grafiki. */}
+      <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-border">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${v.youtubeVideoId}`}
+          title={v.title}
           loading="lazy"
-          decoding="async"
-          referrerPolicy="no-referrer"
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="h-full w-full border-0"
         />
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20"
-        >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">
-            <svg viewBox="0 0 24 24" className="ml-0.5 h-5 w-5 fill-current">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-        </span>
-      </a>
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         {v.format && (
