@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getRanking } from "@/lib/ranking";
 import { RankingList } from "./ranking-list";
 
@@ -6,18 +7,26 @@ export default async function Home() {
 
   return (
     <>
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <span className="text-lg font-bold tracking-tight">Bez Szumu</span>
-          <span className="rounded-full bg-accent/10 px-3 py-1 text-xs text-accent">wersja robocza</span>
+      <header className="border-b border-border bg-white">
+        <div className="mx-auto flex max-w-3xl items-center justify-center px-4 py-3">
+          <h1 className="m-0">
+            <Image
+              src="/logo.png"
+              alt="Bez-Szumu.pl — rzetelne treści w kontekście"
+              width={1128}
+              height={267}
+              priority
+              className="h-auto w-full max-w-[21rem] sm:max-w-md"
+            />
+          </h1>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <section className="mb-6">
-          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
+          <p className="text-2xl font-bold leading-tight sm:text-3xl">
             Najlepsze polskie wywiady geopolityczne. Bez clickbaitów.
-          </h1>
+          </p>
           <p className="mt-2 text-muted">
             Codziennie oceniamy nowe rozmowy powyżej 20 minut: merytoryka, zgodność tytułu z treścią, wnioski i znaczniki czasu.
           </p>

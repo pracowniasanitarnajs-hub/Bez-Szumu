@@ -4,15 +4,39 @@ import { useEffect, useMemo, useState } from "react";
 import type { RankedVideo } from "@/lib/ranking";
 import { Card } from "./card";
 
-type Range = "all" | "24h" | "week" | "month";
+type Range = "today" | "yesterday" | "week" | "month" | "all";
 type Sort = "score" | "date";
 
-const RANGES: { key: Range; label: string; ms: number }[] = [
-  { key: "24h", label: "Dziś", ms: 24 * 3600e3 }, // ostatnie 24 godziny
-  { key: "week", label: "Tydzień", ms: 7 * 24 * 3600e3 },
-  { key: "month", label: "Miesiąc", ms: 30 * 24 * 3600e3 },
-  { key: "all", label: "Wszystkie", ms: Infinity },
+const RANGES: { key: Range; label: string }[] = [
+  { key: "today", label: "Dzisiejsze" },
+  { key: "yesterday", label: "Wczorajsze" },
+  { key: "week", label: "Z tygodnia" },
+  { key: "month", label: "Z miesiąca" },
+  { key: "all", label: "Wszystkie" },
 ];
+
+const DAY = 24 * 3600e3;
+
+// Dzień kalendarzowy w Polsce (RRRR-MM-DD), niezależnie od strefy czasowej przeglądarki.
+function dayKey(ms: number): string {
+  return new Date(ms).toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
+}
+
+function inRange(range: Range, publishedAt: string, now: number | null): boolean {
+  // `now` jest znany dopiero w przeglądarce; do tego czasu nie filtrujemy po dacie.
+  if (now === null || range === "all") return true;
+  const t = new Date(publishedAt).getTime();
+  switch (range) {
+    case "today":
+      return dayKey(t) === dayKey(now);
+    case "yesterday":
+      return dayKey(t) === dayKey(now - DAY);
+    case "week":
+      return now - t <= 7 * DAY;
+    case "month":
+      return now - t <= 30 * DAY;
+  }
+}
 
 // Wyszukiwanie bez rozróżniania wielkości liter i polskich znaków.
 function norm(s: string): string {
@@ -53,19 +77,15 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
   const rangeCounts = useMemo(() => {
     const out = {} as Record<Range, number>;
     for (const r of RANGES) {
-      out[r.key] = items.filter(
-        (v) => now === null || now - new Date(v.publishedAt).getTime() <= r.ms,
-      ).length;
+      out[r.key] = items.filter((v) => inRange(r.key, v.publishedAt, now)).length;
     }
     return out;
   }, [items, now]);
 
   const shown = useMemo(() => {
-    const maxAge = RANGES.find((r) => r.key === range)!.ms;
     const q = norm(query.trim());
     const list = items.filter((v) => {
-      // `now` jest znany dopiero w przeglądarce; do tego czasu nie filtrujemy po wieku.
-      if (now !== null && now - new Date(v.publishedAt).getTime() > maxAge) return false;
+      if (!inRange(range, v.publishedAt, now)) return false;
       if (tag && !v.tags.includes(tag)) return false;
       if (q) {
         const hay = norm([v.title, v.guest ?? "", v.channel, v.tags.join(" "), v.summary.join(" ")].join(" "));
@@ -85,7 +105,7 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
   return (
     <div>
       <div className="mb-5 space-y-3">
-        <div role="tablist" aria-label="Zakres czasu" className="grid grid-cols-4 border-b border-border">
+        <div role="tablist" aria-label="Zakres czasu" className="-mx-4 flex overflow-x-auto border-b border-border px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {RANGES.map((r) => {
             const active = range === r.key;
             return (
@@ -98,7 +118,7 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
                   setNow(Date.now());
                   setRange(r.key);
                 }}
-                className={`-mb-px min-h-12 border-b-2 px-1 text-sm font-semibold transition-colors sm:text-base ${
+                className={`-mb-px min-h-12 shrink-0 whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors sm:text-base ${
                   active ? "border-accent text-accent" : "border-transparent text-muted hover:text-foreground"
                 }`}
               >

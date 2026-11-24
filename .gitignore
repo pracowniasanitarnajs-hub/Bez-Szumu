@@ -45,3 +45,6 @@ next-env.d.ts
 
 # artefakty budowania w dowolnym podkatalogu
 **/.next/
+
+# oryginalne zrodlo logo (do uzytku wewnetrznego)
+75b819f1-*.png
