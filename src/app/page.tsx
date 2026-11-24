@@ -37,7 +37,10 @@ export default function Home() {
 // Dostęp egzekwowany na serwerze: do przeglądarki trafia tylko to, co użytkownik może zobaczyć.
 async function RankingSection() {
   const [{ items, demo }, access] = await Promise.all([getRanking(), getAccess()]);
-  const full = hasFullAccess(access);
+  // Tymczasowo wszyscy (także niezalogowani) widzą wszystko. Aby włączyć ograniczenie dla gości
+  // i paywall po triale, ustaw w Render → Environment: GUEST_FULL_ACCESS=false.
+  const open = process.env.GUEST_FULL_ACCESS !== "false";
+  const full = open || hasFullAccess(access);
   const visible = full
     ? items
     : [...items]
@@ -46,7 +49,7 @@ async function RankingSection() {
 
   return (
     <>
-      {access.level === "guest" && (
+      {!open && access.level === "guest" && (
         <div className="mb-5 rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm">
           <p>
             Widzisz {Math.min(GUEST_PREVIEW, items.length)} najnowsze wywiady z {items.length}.{" "}
@@ -60,7 +63,7 @@ async function RankingSection() {
           </Link>
         </div>
       )}
-      {access.level === "expired" && <Paywall />}
+      {!open && access.level === "expired" && <Paywall />}
       {demo && (
         <p className="mb-3 text-xs text-muted">Tryb demonstracyjny: dane przykładowe, baza nie jest jeszcze podłączona.</p>
       )}

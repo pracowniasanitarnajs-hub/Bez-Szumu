@@ -60,3 +60,5 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Logowanie Google/Apple przez Supabase Auth (`/login`, `/auth/callback`, `/auth/signout`, `src/proxy.ts` odświeża sesję).
 - Dostęp wyznacza serwer (`src/lib/session.ts`): gość i po wygaśnięciu triala widzą 3 najnowsze wywiady, trial (30 dni) i aktywna subskrypcja widzą wszystko. Po wygaśnięciu pokazuje się Paywall (przyciski płatności nieaktywne do czasu Stripe).
 - Ranking czytany po stronie serwera pełną listą (klucz service role); do przeglądarki trafia tylko to, co użytkownik może zobaczyć. RLS w bazie nadal chroni bezpośrednie wywołania API.
+
+- **Tymczasowo wszyscy (także niezalogowani) widzą wszystko** — `GUEST_FULL_ACCESS` (domyślnie włączone). Aby wprowadzić limit 3 filmów dla gości i paywall po triale: ustawić `GUEST_FULL_ACCESS=false` w Render → Environment.
