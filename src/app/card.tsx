@@ -6,6 +6,13 @@ const CLICKBAIT_STYLE: Record<RankedVideo["clickbait"], string> = {
   Wysoki: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
 };
 
+// Etykieta opisuje zgodność tytułu z treścią rozmowy (nie ocenia twórcy).
+const CLICKBAIT_LABEL: Record<RankedVideo["clickbait"], string> = {
+  Niski: "✓ Tytuł zgodny z treścią",
+  Średni: "~ Tytuł częściowo zgodny z treścią",
+  Wysoki: "! Tytuł nie odpowiada treści",
+};
+
 function fmt(t: number) {
   const h = Math.floor(t / 3600);
   const m = Math.floor((t % 3600) / 60);
@@ -62,7 +69,7 @@ export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => vo
           </span>
         )}
         <span className={`rounded-full px-2.5 py-1 font-medium ${CLICKBAIT_STYLE[v.clickbait]}`}>
-          Zgodność tytułu: {v.clickbait === "Niski" ? "wysoka" : v.clickbait === "Średni" ? "częściowa" : "niska"} (clickbait: {v.clickbait.toLowerCase()})
+          {CLICKBAIT_LABEL[v.clickbait]}
         </span>
         {v.tags.map((t) =>
           onTag ? (
