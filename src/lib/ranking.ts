@@ -16,6 +16,8 @@ export type RankedVideo = {
   timestamps: { t: number; label: string }[];
   tags: string[];
   editorComment: string | null;
+  format: "Wywiad" | "Live" | "Q&A" | "Inny" | null;
+  noisePercent: number | null;
 };
 
 export const DEMO: RankedVideo[] = [
@@ -42,6 +44,8 @@ export const DEMO: RankedVideo[] = [
     ],
     tags: ["#Bałtyk", "#NATO", "#Wojsko"],
     editorComment: null,
+    format: "Wywiad",
+    noisePercent: 5,
   },
 ];
 
@@ -57,7 +61,7 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
   const { data, error } = await db
     .from("videos")
     .select(
-      "id, youtube_video_id, title, published_at, duration_seconds, channels(name), analyses(ai_score, editor_score, clickbait_level, clickbait_note, summary, timestamps, guest, tags, editor_comment)",
+      "id, youtube_video_id, title, published_at, duration_seconds, channels(name), analyses(ai_score, editor_score, clickbait_level, clickbait_note, summary, timestamps, guest, tags, editor_comment, format, noise_percent)",
     )
     .eq("status", "published")
     .order("published_at", { ascending: false })
@@ -83,6 +87,8 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
         timestamps: a.timestamps ?? [],
         tags: a.tags ?? [],
         editorComment: a.editor_comment,
+        format: a.format ?? null,
+        noisePercent: a.noise_percent ?? null,
       },
     ];
   });

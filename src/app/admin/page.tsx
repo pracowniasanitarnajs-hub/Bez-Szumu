@@ -165,6 +165,15 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
                         <button className={btn}>Ponów</button>
                       </form>
                     )}
+                    {(v.status === "pending" || v.status === "published") && (
+                      <form action={setStatus}>
+                        <input type="hidden" name="id" value={v.id} />
+                        <input type="hidden" name="status" value="queued" />
+                        <button className={btn} title="Wraca do kolejki i jest oceniany od nowa (nowym promptem). Po ocenie trzeba go znów opublikować.">
+                          Oceń ponownie
+                        </button>
+                      </form>
+                    )}
                     {v.status === "pending" && (
                       <form action={setStatus}>
                         <input type="hidden" name="id" value={v.id} />

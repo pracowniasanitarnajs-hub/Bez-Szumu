@@ -103,6 +103,8 @@ export async function processVideos(): Promise<ProcessReport> {
         timestamps: analysis.timestamps,
         guest: analysis.guest,
         tags: analysis.tags,
+        format: analysis.format,
+        noise_percent: analysis.noisePercent,
         model,
       });
       if (aErr) throw aErr;

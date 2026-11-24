@@ -6,11 +6,25 @@ export type Analysis = {
   timestamps: { t: number; label: string }[];
   guest: string | null;
   tags: string[];
+  format: "Wywiad" | "Live" | "Q&A" | "Inny";
+  noisePercent: number; // udział treści niemerytorycznej (0-100)
 };
+
+const FORMATS = ["Wywiad", "Live", "Q&A", "Inny"] as const;
 
 const RUBRIC = `Jesteś redaktorem polskiego serwisu rankingującego wywiady geopolityczne. Oceń wywiad na podstawie transkrypcji (z markerami czasu [m:ss] lub [h:mm:ss]).
 Zwróć WYŁĄCZNIE obiekt JSON (bez markdown) o polach:
 - "score": liczba 1-10 (jedna cyfra po przecinku) — merytoryka wg gęstości twardych konkretów: daty, liczby, traktaty, nazwy, weryfikowalne fakty vs ogólniki i opinie. Nie nagradzaj długości ani pewnego tonu.
+  OCENIAJ WYŁĄCZNIE FRAGMENTY MERYTORYCZNE. Całkowicie pomiń reklamy, pozdrowienia, prośby o lajki i wsparcie, czytanie czatu, zapowiedzi książek i spotkań oraz dygresje niezwiązane z tematem: nie wpływają na ocenę w żadną stronę.
+  Używaj pełnej skali. Kotwice:
+  1-2: prawie wyłącznie opinie i ogólniki, brak weryfikowalnych danych.
+  3: dużo ogólników i spekulacji, pojedyncze fakty bez szczegółów.
+  5: mieszanka — część twierdzeń oparta na datach, liczbach lub nazwach, reszta to komentarz i domysły; fakty słabo oddzielone od opinii.
+  7: większość merytorycznych fragmentów oparta na konkretach (daty, liczby, nazwy, dokumenty), fakty wyraźnie oddzielone od opinii, rozmówca przyznaje niepewność.
+  9: gęsta, wielowątkowa analiza z wieloma weryfikowalnymi danymi, kontekstem historycznym lub prawnym, kontrargumentami i rozróżnieniem faktu, opinii i hipotezy.
+  Dobry, rzetelny wywiad to zwykle 6-8; oceny 9-10 są rzadkie, ale możliwe.
+- "noise_percent": liczba całkowita 0-100 — szacowany udział czasu rozmowy zajętego treścią niemerytoryczną (reklamy, pozdrowienia, czat, dygresje). Informacja pomocnicza, nie obniża "score".
+- "format": "Wywiad" (rozmowa prowadzącego z gościem) | "Live" (transmisja na żywo, głównie monolog prowadzącego) | "Q&A" (głównie odpowiedzi na pytania widzów) | "Inny".
 - "clickbait_level": "Niski" | "Średni" | "Wysoki" — zgodność tytułu z faktyczną treścią rozmowy.
 - "clickbait_note": 1 zdanie, neutralny opis zgodności tytułu z treścią, bez oskarżeń i ocen moralnych.
 - "summary": tablica 3-4 wniosków WŁASNYMI SŁOWAMI (nie cytuj, nie kopiuj fragmentów transkrypcji), po 1-2 zdania.
@@ -101,5 +115,9 @@ function validate(j: any, durationSeconds: number): Analysis {
     timestamps,
     guest: j.guest ? String(j.guest) : null,
     tags,
+    format: (FORMATS as readonly string[]).includes(j.format) ? j.format : "Inny",
+    noisePercent: Number.isFinite(Number(j.noise_percent))
+      ? Math.min(100, Math.max(0, Math.round(Number(j.noise_percent))))
+      : 0,
   };
 }

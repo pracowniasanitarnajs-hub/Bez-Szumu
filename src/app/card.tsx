@@ -66,6 +66,17 @@ export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => vo
       </a>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        {v.format && (
+          <span className="rounded-full bg-accent/10 px-2.5 py-1 font-semibold text-accent">{v.format}</span>
+        )}
+        {v.noisePercent !== null && v.noisePercent >= 15 && (
+          <span
+            className="rounded-full border border-border px-2.5 py-1 text-muted"
+            title="Szacowany udział treści niemerytorycznej (reklamy, pozdrowienia, czat, dygresje). Nie obniża oceny."
+          >
+            Szum: ok. {v.noisePercent}%
+          </span>
+        )}
         <span className={`rounded-full px-2.5 py-1 font-medium ${CLICKBAIT_STYLE[v.clickbait]}`}>
           Zgodność tytułu: {v.clickbait === "Niski" ? "wysoka" : v.clickbait === "Średni" ? "częściowa" : "niska"} (clickbait: {v.clickbait.toLowerCase()})
         </span>
