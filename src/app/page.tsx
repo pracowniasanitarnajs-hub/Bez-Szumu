@@ -1,32 +1,20 @@
-import Image from "next/image";
 import { getRanking } from "@/lib/ranking";
 import { RankingList } from "./ranking-list";
+import { SiteHeader } from "./site-header";
+import { SiteFooter } from "./site-footer";
 
 export default async function Home() {
   const { items, demo } = await getRanking();
 
   return (
     <>
-      <header className="border-b border-border bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-center px-4 py-3">
-          <h1 className="m-0">
-            <Image
-              src="/logo.png"
-              alt="Bez-Szumu.pl — rzetelne treści w kontekście"
-              width={1128}
-              height={267}
-              priority
-              className="h-auto w-full max-w-[21rem] sm:max-w-md"
-            />
-          </h1>
-        </div>
-      </header>
+      <SiteHeader active="ranking" />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <section className="mb-6">
-          <p className="text-2xl font-bold leading-tight sm:text-3xl">
+          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
             Najlepsze polskie wywiady geopolityczne. Bez clickbaitów.
-          </p>
+          </h1>
           <p className="mt-2 text-muted">
             Codziennie oceniamy nowe rozmowy z polskich kanałów: merytoryka, zgodność tytułu z treścią, wnioski i znaczniki czasu.
           </p>
@@ -40,18 +28,7 @@ export default async function Home() {
 
         <RankingList items={items} />
 
-        <p className="mt-8 text-xs leading-relaxed text-muted">
-          Oceny i streszczenia są generowane automatycznie przez AI. To subiektywna opinia o treści materiału, a nie o osobach, i może być korygowana przez redaktora. Serwis nie kopiuje ani nie przechowuje filmów: osadza oficjalny odtwarzacz YouTube i linkuje do oryginałów. Wszystkie nazwy, znaki i materiały należą do ich właścicieli.
-          {process.env.NEXT_PUBLIC_CONTACT_EMAIL && (
-            <>
-              {" "}Zauważyłeś błąd lub chcesz sprostowania albo usunięcia materiału?{" "}
-              <a className="underline" href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`}>
-                Napisz do nas
-              </a>
-              .
-            </>
-          )}
-        </p>
+        <SiteFooter />
       </main>
     </>
   );
