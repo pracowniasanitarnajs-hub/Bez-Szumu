@@ -58,11 +58,8 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return { items: DEMO, demo: true };
 
-  // Dopóki nie ma logowania i paywalla, strona publiczna pokazuje wszystkie opublikowane filmy
-  // (odczyt po stronie serwera). Po wdrożeniu logowania ustaw PUBLIC_SHOW_ALL=false: wtedy goście
-  // widzą tylko 3 najnowsze (reguła RLS w bazie), a pełną listę dostają zalogowani.
-  const showAll = process.env.PUBLIC_SHOW_ALL !== "false" && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const db = showAll ? createAdminClient() : createClient(url, key, { auth: { persistSession: false } });
+  // Czytamy po stronie serwera pełną listę; o tym, co zobaczy użytkownik, decyduje kod strony (gość/trial/subskrypcja).
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : createClient(url, key, { auth: { persistSession: false } });
   const { data, error } = await db
     .from("videos")
     .select(

@@ -22,9 +22,7 @@ export async function getChannels(): Promise<ChannelInfo[]> {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return [];
 
-  // Ta sama zasada co w rankingu: do czasu wdrożenia logowania pokazujemy pełne dane.
-  const showAll = process.env.PUBLIC_SHOW_ALL !== "false" && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const db = showAll ? createAdminClient() : createClient(url, key, { auth: { persistSession: false } });
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : createClient(url, key, { auth: { persistSession: false } });
 
   const { data, error } = await db
     .from("channels")

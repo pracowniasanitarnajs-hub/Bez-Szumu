@@ -56,5 +56,7 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Stopka: adnotacja o automatycznej, subiektywnej ocenie + link do zgłaszania sprostowań, jeśli ustawiono `NEXT_PUBLIC_CONTACT_EMAIL` (dodać w Render → Environment).
 - DO ZROBIENIA przed płatnym startem: regulamin, polityka prywatności, procedura sprostowań, konsultacja z prawnikiem (prawo autorskie/media).
 
-## Podgląd publiczny
-- `PUBLIC_SHOW_ALL` (domyślnie włączone): strona główna pokazuje wszystkie opublikowane filmy, bo nie ma jeszcze logowania. **Po wdrożeniu logowania/paywalla ustawić `PUBLIC_SHOW_ALL=false`** — goście zobaczą wtedy tylko 3 najnowsze (reguła RLS), pełną listę zalogowani z dostępem.
+## Dostęp (zaimplementowane)
+- Logowanie Google/Apple przez Supabase Auth (`/login`, `/auth/callback`, `/auth/signout`, `src/proxy.ts` odświeża sesję).
+- Dostęp wyznacza serwer (`src/lib/session.ts`): gość i po wygaśnięciu triala widzą 3 najnowsze wywiady, trial (30 dni) i aktywna subskrypcja widzą wszystko. Po wygaśnięciu pokazuje się Paywall (przyciski płatności nieaktywne do czasu Stripe).
+- Ranking czytany po stronie serwera pełną listą (klucz service role); do przeglądarki trafia tylko to, co użytkownik może zobaczyć. RLS w bazie nadal chroni bezpośrednie wywołania API.

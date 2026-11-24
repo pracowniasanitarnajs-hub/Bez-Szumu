@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AccountBar } from "./account-bar";
 
 const NAV = [
   { key: "ranking", href: "/", label: "Ranking" },
@@ -23,7 +25,7 @@ export function SiteHeader({ active }: { active: "ranking" | "kanaly" }) {
           </Link>
         </div>
       </div>
-      <nav aria-label="Główna nawigacja" className="mx-auto flex max-w-3xl gap-2 px-4 py-3">
+      <nav aria-label="Główna nawigacja" className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
         {NAV.map((n) => {
           const on = n.key === active;
           return (
@@ -41,6 +43,9 @@ export function SiteHeader({ active }: { active: "ranking" | "kanaly" }) {
             </Link>
           );
         })}
+        <Suspense fallback={<span className="ml-auto" />}>
+          <AccountBar />
+        </Suspense>
       </nav>
     </header>
   );
