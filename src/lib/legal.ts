@@ -9,7 +9,7 @@ export const LEGAL_DRAFT = true;
 export const COMPANY = {
   name: "Pracownia Sanitarna JS Sp. z o.o.",
   address: "ul. Akacjowa 6, 89-606 Charzykowy, Polska",
-  nip: process.env.NEXT_PUBLIC_COMPANY_NIP || TBD,
+  nip: process.env.NEXT_PUBLIC_COMPANY_NIP || "5552138791",
   krs: process.env.NEXT_PUBLIC_COMPANY_KRS || TBD,
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || TBD,
   site: "bez-szumu.pl",
