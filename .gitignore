@@ -48,3 +48,7 @@ next-env.d.ts
 
 # oryginalne zrodlo logo (do uzytku wewnetrznego)
 75b819f1-*.png
+
+# klucze Apple i inne sekrety (nigdy do repozytorium)
+/secrets/
+*.p8
