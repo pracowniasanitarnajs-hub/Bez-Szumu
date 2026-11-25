@@ -1,5 +1,9 @@
+export const CRITERIA_KEYS = ["konkrety", "fakty_opinie", "kontekst", "struktura", "perspektywy"] as const;
+export type Criteria = Record<(typeof CRITERIA_KEYS)[number], number>; // każde 0–2, krok 0,5
+
 export type Analysis = {
-  score: number;
+  score: number; // suma kryteriów (1–10), liczona po stronie serwera
+  criteria: Criteria | null;
   clickbaitLevel: "Niski" | "Średni" | "Wysoki";
   clickbaitNote: string;
   summary: string[];
@@ -14,16 +18,17 @@ const FORMATS = ["Wywiad", "Live", "Q&A", "Inny"] as const;
 
 const RUBRIC = `Jesteś redaktorem polskiego serwisu rankingującego wywiady geopolityczne. Oceń wywiad na podstawie transkrypcji (z markerami czasu [m:ss] lub [h:mm:ss]).
 Zwróć WYŁĄCZNIE obiekt JSON (bez markdown) o polach:
-- "score": liczba 1-10 (jedna cyfra po przecinku) — merytoryka wg gęstości twardych konkretów: daty, liczby, traktaty, nazwy, weryfikowalne fakty vs ogólniki i opinie. Nie nagradzaj długości ani pewnego tonu.
-  OCENIAJ WYŁĄCZNIE FRAGMENTY MERYTORYCZNE. Całkowicie pomiń reklamy, pozdrowienia, prośby o lajki i wsparcie, czytanie czatu, zapowiedzi książek i spotkań oraz dygresje niezwiązane z tematem: nie wpływają na ocenę w żadną stronę.
-  Używaj pełnej skali. Kotwice:
-  1-2: prawie wyłącznie opinie i ogólniki, brak weryfikowalnych danych.
-  3: dużo ogólników i spekulacji, pojedyncze fakty bez szczegółów.
-  5: mieszanka — część twierdzeń oparta na datach, liczbach lub nazwach, reszta to komentarz i domysły; fakty słabo oddzielone od opinii.
-  7: większość merytorycznych fragmentów oparta na konkretach (daty, liczby, nazwy, dokumenty), fakty wyraźnie oddzielone od opinii, rozmówca przyznaje niepewność.
-  9: gęsta, wielowątkowa analiza z wieloma weryfikowalnymi danymi, kontekstem historycznym lub prawnym, kontrargumentami i rozróżnieniem faktu, opinii i hipotezy.
-  Dobry, rzetelny wywiad to zwykle 6-8; oceny 9-10 są rzadkie, ale możliwe.
-- "noise_percent": liczba całkowita 0-100 — szacowany udział czasu rozmowy zajętego treścią niemerytoryczną (reklamy, pozdrowienia, czat, dygresje). Informacja pomocnicza, nie obniża "score".
+- "criteria": obiekt z PIĘCIOMA ocenami merytorycznymi. Każda ocena to liczba 0, 0.5, 1, 1.5 lub 2 (krok 0,5). Nie podajesz oceny łącznej — policzy ją system.
+  Oceniaj WYŁĄCZNIE fragmenty merytoryczne. Całkowicie pomiń reklamy, pozdrowienia, prośby o lajki i wsparcie, czytanie czatu, zapowiedzi książek i spotkań oraz dygresje niezwiązane z tematem: nie wpływają na ocenę w żadną stronę. Nie nagradzaj długości ani pewnego tonu.
+  Oceniaj rozmowę na tle dobrych polskich rozmów publicystycznych na ten temat (nie na tle referatu naukowego). Używaj całej skali. Znaczenie punktów w każdym kryterium: 0 = brak; 0.5 = słabo; 1 = przeciętnie, ograniczone; 1.5 = solidnie, typowo dla dobrej rozmowy; 2 = wzorowo.
+  Kryteria (klucze JSON):
+  - "konkrety": gęstość sprawdzalnych szczegółów — daty, liczby, nazwy, miejsca, dokumenty, traktaty, wydarzenia. 0 = prawie same ogólniki i opinie; 1 = pojedyncze konkrety; 2 = konkrety padają regularnie i da się je zweryfikować.
+  - "fakty_opinie": rozdzielenie faktów od opinii i hipotez. 0 = opinie podawane jak fakty; 1 = częściowe rozróżnienie; 2 = wyraźnie oddzielone, rozmówcy zaznaczają niepewność lub źródło.
+  - "kontekst": tło historyczne, polityczne, prawne, gospodarcze; odniesienia do wcześniejszych wydarzeń i decyzji. 0 = brak tła; 1 = trochę; 2 = bogate, pomaga zrozumieć "dlaczego".
+  - "struktura": uporządkowanie i głębia rozwinięcia wątków. 0 = chaotycznie i powierzchownie; 1 = czytelnie, ale płytko; 2 = wątki rozwinięte, wnioski wyciągnięte.
+  - "perspektywy": różne punkty widzenia, kontrargumenty, ryzyka. 0 = jedna narracja bez żadnych zastrzeżeń; 1 = wspomniane inne stanowiska; 2 = rzetelnie przedstawione różne perspektywy lub kontrargumenty.
+  Orientacyjnie: solidna, typowa dobra rozmowa daje sumę ok. 6–7,5; przeciętna 4,5–6; słaba 2–4; wybitna 8,5 i więcej. Spekulacje bez danych to niskie "konkrety" i "fakty_opinie", ale nie karz za to, że forma to rozmowa, a nie referat.
+- "noise_percent": liczba całkowita 0-100 — szacowany udział czasu rozmowy zajętego treścią niemerytoryczną (reklamy, pozdrowienia, czat, dygresje). Informacja pomocnicza, nie wpływa na kryteria.
 - "format": "Wywiad" (rozmowa prowadzącego z gościem) | "Live" (transmisja na żywo, głównie monolog prowadzącego) | "Q&A" (głównie odpowiedzi na pytania widzów) | "Inny".
 - "clickbait_level": "Niski" | "Średni" | "Wysoki" — zgodność tytułu z faktyczną treścią rozmowy.
 - "clickbait_note": 1 zdanie, neutralny opis zgodności tytułu z treścią, bez oskarżeń i ocen moralnych.
@@ -96,8 +101,23 @@ function parseJson(text: string): any {
 }
 
 function validate(j: any, durationSeconds: number): Analysis {
-  const score = Number(j.score);
-  if (!Number.isFinite(score) || score < 1 || score > 10) throw new Error("Nieprawidłowy score");
+  // Ocena łączna = suma pięciu kryteriów (0–2, krok 0,5), liczona tutaj, a nie zgadywana przez model.
+  let criteria: Criteria | null = null;
+  let score: number;
+  if (j.criteria && typeof j.criteria === "object") {
+    const c = {} as Criteria;
+    for (const k of CRITERIA_KEYS) {
+      const v = Number(j.criteria[k]);
+      if (!Number.isFinite(v)) throw new Error(`Brak kryterium: ${k}`);
+      c[k] = Math.min(2, Math.max(0, Math.round(v * 2) / 2));
+    }
+    criteria = c;
+    score = CRITERIA_KEYS.reduce((s, k) => s + c[k], 0);
+  } else {
+    score = Number(j.score); // zgodność wsteczna: model zwrócił tylko ocenę łączną
+  }
+  if (!Number.isFinite(score) || score > 10) throw new Error("Nieprawidłowa ocena");
+  score = Math.max(1, score);
   const level = j.clickbait_level;
   if (!["Niski", "Średni", "Wysoki"].includes(level)) throw new Error("Nieprawidłowy clickbait_level");
   const summary = Array.isArray(j.summary) ? j.summary.map(String).slice(0, 4) : [];
@@ -114,6 +134,7 @@ function validate(j: any, durationSeconds: number): Analysis {
     .slice(0, 6);
   return {
     score: Math.round(score * 10) / 10,
+    criteria,
     clickbaitLevel: level,
     clickbaitNote: String(j.clickbait_note ?? ""),
     summary,

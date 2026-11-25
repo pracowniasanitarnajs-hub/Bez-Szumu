@@ -14,6 +14,14 @@ const CLICKBAIT_LABEL: Record<RankedVideo["clickbait"], string> = {
   Wysoki: "! Tytuł nie odpowiada treści",
 };
 
+const CRITERIA_LABELS = [
+  ["konkrety", "Konkrety (daty, liczby, nazwy, dokumenty)"],
+  ["fakty_opinie", "Fakty oddzielone od opinii"],
+  ["kontekst", "Kontekst i tło"],
+  ["struktura", "Struktura i głębia"],
+  ["perspektywy", "Różne perspektywy i kontrargumenty"],
+] as const;
+
 function fmt(t: number) {
   const h = Math.floor(t / 3600);
   const m = Math.floor((t % 3600) / 60);
@@ -78,6 +86,31 @@ export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => vo
         )}
       </div>
       {v.clickbaitNote && <p className="mt-2 text-xs text-muted">{v.clickbaitNote}</p>}
+
+      {v.criteria && (
+        <details className="mt-3 rounded-lg border border-border bg-background/40 text-sm">
+          <summary className="cursor-pointer select-none px-3 py-2 text-muted">Jak powstała ocena {v.score.toFixed(1)}/10</summary>
+          <ul className="space-y-2 px-3 pb-3 pt-1">
+            {CRITERIA_LABELS.map(([key, label]) => {
+              const val = v.criteria![key];
+              return (
+                <li key={key}>
+                  <div className="flex items-baseline justify-between text-xs">
+                    <span>{label}</span>
+                    <span className="font-mono text-muted">{val.toFixed(1)} / 2</span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-border" aria-hidden="true">
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${(val / 2) * 100}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+            <li className="pt-1 text-xs text-muted">
+              Ocena to suma pięciu kryteriów (po 0–2 pkt). Oceniamy treść merytoryczną rozmowy; reklamy, pozdrowienia i czat nie wpływają na wynik.
+            </li>
+          </ul>
+        </details>
+      )}
 
       <ul className="mt-4 list-disc space-y-1.5 pl-5 text-sm">
         {v.summary.map((s, i) => <li key={i}>{s}</li>)}

@@ -19,6 +19,8 @@ export type RankedVideo = {
   editorComment: string | null;
   format: "Wywiad" | "Live" | "Q&A" | "Inny" | null;
   noisePercent: number | null;
+  // Rozbicie oceny: 5 kryteriów po 0–2 pkt (null dla starszych ocen).
+  criteria: Record<"konkrety" | "fakty_opinie" | "kontekst" | "struktura" | "perspektywy", number> | null;
 };
 
 export const DEMO: RankedVideo[] = [
@@ -47,6 +49,7 @@ export const DEMO: RankedVideo[] = [
     editorComment: null,
     format: "Wywiad",
     noisePercent: 5,
+    criteria: { konkrety: 2, fakty_opinie: 1.5, kontekst: 2, struktura: 1.5, perspektywy: 1 },
   },
 ];
 
@@ -60,14 +63,18 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
 
   // Czytamy po stronie serwera pełną listę; o tym, co zobaczy użytkownik, decyduje kod strony (gość/trial/subskrypcja).
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : createClient(url, key, { auth: { persistSession: false } });
-  const { data, error } = await db
-    .from("videos")
-    .select(
-      "id, youtube_video_id, title, published_at, duration_seconds, channels(name), analyses(ai_score, editor_score, clickbait_level, clickbait_note, summary, timestamps, guest, tags, editor_comment, format, noise_percent)",
-    )
-    .eq("status", "published")
-    .order("published_at", { ascending: false })
-    .limit(200);
+  const query = (extra: string) =>
+    db
+      .from("videos")
+      .select(
+        `id, youtube_video_id, title, published_at, duration_seconds, channels(name), analyses(ai_score, editor_score, clickbait_level, clickbait_note, summary, timestamps, guest, tags, editor_comment, format, noise_percent${extra})`,
+      )
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(200);
+  // Kolumna criteria (migracja 0004) może jeszcze nie istnieć — wtedy czytamy bez niej.
+  let { data, error } = await query(", criteria");
+  if (error) ({ data, error } = await query(""));
   if (error || !data) return { items: [], demo: false };
 
   const items: RankedVideo[] = data.flatMap((v: any) => {
@@ -91,6 +98,7 @@ export async function getRanking(): Promise<{ items: RankedVideo[]; demo: boolea
         editorComment: a.editor_comment,
         format: a.format ?? null,
         noisePercent: a.noise_percent ?? null,
+        criteria: a.criteria ?? null,
       },
     ];
   });

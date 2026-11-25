@@ -115,7 +115,7 @@ export async function processVideos(): Promise<ProcessReport> {
         durationSeconds: v.duration_seconds ?? 0,
         transcriptText: transcriptToPromptText(segments),
       });
-      const { error: aErr } = await db.from("analyses").upsert({
+      const row = {
         video_id: v.id,
         ai_score: analysis.score,
         clickbait_level: analysis.clickbaitLevel,
@@ -127,7 +127,12 @@ export async function processVideos(): Promise<ProcessReport> {
         format: analysis.format,
         noise_percent: analysis.noisePercent,
         model,
-      });
+      };
+      let { error: aErr } = await db.from("analyses").upsert({ ...row, criteria: analysis.criteria });
+      if (aErr && /criteria/i.test(aErr.message)) {
+        // Kolumna criteria jeszcze nie istnieje (migracja 0004): zapisujemy bez rozbicia.
+        ({ error: aErr } = await db.from("analyses").upsert(row));
+      }
       if (aErr) throw aErr;
       // Niska ocena albo "Wysoki" clickbait (najbardziej wrażliwa etykieta) wymagają akceptacji redaktora.
       const needsReview = analysis.score < reviewBelow || analysis.clickbaitLevel === "Wysoki";
