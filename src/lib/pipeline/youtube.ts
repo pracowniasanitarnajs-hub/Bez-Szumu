@@ -1,6 +1,7 @@
 export type VideoMeta = {
   durationSeconds: number;
   isLiveOrUpcoming: boolean;
+  title: string | null; // aktualny tytuł (przy premierach zmienia się po jej zakończeniu)
 };
 
 // ISO 8601 (PT1H2M3S) -> sekundy.
@@ -29,6 +30,7 @@ export async function fetchVideoMeta(ids: string[]): Promise<Map<string, VideoMe
       out.set(item.id, {
         durationSeconds: parseIsoDuration(item.contentDetails?.duration ?? ""),
         isLiveOrUpcoming: live === "live" || live === "upcoming",
+        title: item.snippet?.title ?? null,
       });
     }
   }

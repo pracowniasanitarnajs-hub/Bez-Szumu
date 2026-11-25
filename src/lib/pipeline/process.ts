@@ -63,7 +63,11 @@ export async function processVideos(): Promise<ProcessReport> {
 
   // 2) Długość filmu -> skipped / queued.
   try {
-    const { data: discovered } = await db.from("videos").select("id, youtube_video_id").eq("status", "discovered").limit(100);
+    const { data: discovered } = await db
+      .from("videos")
+      .select("id, youtube_video_id, published_at")
+      .eq("status", "discovered")
+      .limit(100);
     if (discovered && discovered.length > 0) {
       const meta = await fetchVideoMeta(discovered.map((d) => d.youtube_video_id));
       for (const v of discovered) {
@@ -73,10 +77,27 @@ export async function processVideos(): Promise<ProcessReport> {
           report.skipped++;
           continue;
         }
-        const skip = m.isLiveOrUpcoming || m.durationSeconds < minDuration;
+        // Premiera lub transmisja na żywo: NIE odrzucamy na stałe. Zostaje "discovered" i jest sprawdzana
+        // ponownie w kolejnych przebiegach, aż się zakończy (wtedy ma już długość i transkrypcję).
+        // Dopiero po 3 dniach bez zakończenia porzucamy.
+        if (m.isLiveOrUpcoming) {
+          const ageMs = Date.now() - new Date(v.published_at).getTime();
+          if (ageMs > 3 * 86400e3) {
+            await db.from("videos").update({ status: "skipped", error: "Transmisja nie zakończyła się w ciągu 3 dni" }).eq("id", v.id);
+            report.skipped++;
+          }
+          continue;
+        }
+        const skip = m.durationSeconds < minDuration;
         await db
           .from("videos")
-          .update({ duration_seconds: m.durationSeconds, status: skip ? "skipped" : "queued", updated_at: new Date().toISOString() })
+          .update({
+            duration_seconds: m.durationSeconds,
+            status: skip ? "skipped" : "queued",
+            // Tytuł z premiery bywa zaślepką; zapisujemy aktualny z YouTube.
+            ...(m.title ? { title: m.title } : {}),
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", v.id);
         skip ? report.skipped++ : report.queued++;
       }
