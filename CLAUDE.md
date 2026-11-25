@@ -68,3 +68,9 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Zgoda na /login (pole wyboru odblokowuje przyciski), ciasteczko `bs_terms`, zapis `profiles.terms_accepted_at/terms_version` w `/auth/callback` (migracja 0003). Bez zgody callback wylogowuje.
 - `/konto`: status konta i trwałe usunięcie konta (`/konto/usun` -> `auth.admin.deleteUser`, profil usuwa się kaskadowo). Przy Stripe: przed usunięciem anulować subskrypcję.
 - Zmienne firmowe: `NEXT_PUBLIC_COMPANY_NIP`, `NEXT_PUBLIC_COMPANY_KRS`, `NEXT_PUBLIC_CONTACT_EMAIL` (Render -> Environment).
+
+## Apple Sign In — odnawianie sekretu (co 6 miesięcy!)
+- Skonfigurowane 2026-11-25. Services ID: `pl.bezszumu.web`, Team ID: `C32DAM4ZU4`, Key ID: `DJZ7V872KQ`. Klucz `.p8` leży lokalnie w `secrets/AuthKey_DJZ7V872KQ.p8` (git go ignoruje; **zrobić kopię w menedżerze haseł** — Apple nie pozwala pobrać go ponownie).
+- Sekret JWT w Supabase (Authentication → Providers → Apple → Secret Key) **wygasa 2027-05-27**. Odnowić najpóźniej ok. 2027-05-13:
+  `node scripts/apple-secret.js secrets/AuthKey_DJZ7V872KQ.p8 C32DAM4ZU4 DJZ7V872KQ pl.bezszumu.web secrets/apple_client_secret.txt`
+  następnie wkleić zawartość `secrets/apple_client_secret.txt` w Supabase i zapisać.
