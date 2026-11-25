@@ -1,5 +1,3 @@
-// Dane Usługodawcy i wersja dokumentów prawnych. Braki wyświetlają się jako "[do uzupełnienia]".
-const TBD = "[do uzupełnienia]";
 
 export const TERMS_VERSION = "2026-11-25";
 
@@ -10,7 +8,7 @@ export const COMPANY = {
   name: "Pracownia Sanitarna JS Sp. z o.o.",
   address: "ul. Akacjowa 6, 89-606 Charzykowy, Polska",
   nip: process.env.NEXT_PUBLIC_COMPANY_NIP || "5552138791",
-  krs: process.env.NEXT_PUBLIC_COMPANY_KRS || TBD,
+  krs: process.env.NEXT_PUBLIC_COMPANY_KRS || "0001095405",
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "bezszumu9@gmail.com",
   site: "bez-szumu.pl",
 };
