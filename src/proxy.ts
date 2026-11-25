@@ -25,7 +25,8 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  // Odświeża token, gdy wygasł; w przeciwnym razie weryfikuje lokalnie (bez zapytania do Supabase).
+  await supabase.auth.getClaims();
   return response;
 }
 

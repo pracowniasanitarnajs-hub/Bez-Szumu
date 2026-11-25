@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export type Access =
@@ -7,20 +8,21 @@ export type Access =
   | { level: "expired"; email: string | null; isAdmin: boolean };
 
 // Ustalamy dostęp na serwerze z profilu użytkownika (tabela profiles, reguły RLS: tylko własny wiersz).
-export async function getAccess(): Promise<Access> {
+// cache(): wiele komponentów w jednym żądaniu (pasek konta, lista) pyta o dostęp tylko raz.
+export const getAccess = cache(async (): Promise<Access> => {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { level: "guest" };
+  // getClaims() weryfikuje token lokalnie (bez zapytania sieciowego do Supabase), gdy to możliwe.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  if (!claims?.sub) return { level: "guest" };
 
   const { data: p } = await supabase
     .from("profiles")
     .select("subscription_status, trial_ends_at, is_admin, current_period_end")
-    .eq("id", user.id)
+    .eq("id", claims.sub)
     .maybeSingle();
 
-  const email = user.email ?? null;
+  const email = typeof claims.email === "string" ? claims.email : null;
   const isAdmin = !!p?.is_admin;
   if (!p) return { level: "expired", email, isAdmin }; // brak profilu: bezpieczniej nie dawać dostępu
 
@@ -31,7 +33,7 @@ export async function getAccess(): Promise<Access> {
     if (ms > 0) return { level: "trial", email, isAdmin, daysLeft: Math.max(1, Math.ceil(ms / 86400e3)) };
   }
   return { level: "expired", email, isAdmin };
-}
+});
 
 export function hasFullAccess(a: Access): boolean {
   return a.level === "trial" || a.level === "active";

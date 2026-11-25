@@ -36,10 +36,14 @@ export default function Home() {
 
 // Dostęp egzekwowany na serwerze: do przeglądarki trafia tylko to, co użytkownik może zobaczyć.
 async function RankingSection() {
-  const [{ items, demo }, access] = await Promise.all([getRanking(), getAccess()]);
   // Tymczasowo wszyscy (także niezalogowani) widzą wszystko. Aby włączyć ograniczenie dla gości
   // i paywall po triale, ustaw w Render → Environment: GUEST_FULL_ACCESS=false.
   const open = process.env.GUEST_FULL_ACCESS !== "false";
+  // Gdy strona jest otwarta, nie czekamy na sprawdzanie konta (szybsze przechodzenie między zakładkami).
+  const [{ items, demo }, access] = await Promise.all([
+    getRanking(),
+    open ? Promise.resolve({ level: "guest" as const }) : getAccess(),
+  ]);
   const full = open || hasFullAccess(access);
   const visible = full
     ? items

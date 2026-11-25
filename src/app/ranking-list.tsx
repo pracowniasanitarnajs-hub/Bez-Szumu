@@ -16,6 +16,7 @@ const RANGES: { key: Range; label: string }[] = [
 ];
 
 const DAY = 24 * 3600e3;
+const PAGE = 12;
 
 // Dzień kalendarzowy w Polsce (RRRR-MM-DD), niezależnie od strefy czasowej przeglądarki.
 function dayKey(ms: number): string {
@@ -102,6 +103,11 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
 
   const filtered = range !== "all" || tag !== null || query.trim() !== "";
 
+  // Karty pokazujemy partiami: na telefonie kilkadziesiąt kart naraz zużywa za dużo pamięci.
+  const [limit, setLimit] = useState(PAGE);
+  useEffect(() => setLimit(PAGE), [range, sort, tag, query]);
+  const visible = shown.slice(0, limit);
+
   return (
     <div>
       <div className="mb-5 space-y-3">
@@ -187,7 +193,16 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
             Brak wywiadów dla wybranych filtrów.
           </p>
         ) : (
-          shown.map((v) => <Card key={v.id} v={v} onTag={(t) => setTag(t)} />)
+          visible.map((v) => <Card key={v.id} v={v} onTag={(t) => setTag(t)} />)
+        )}
+        {shown.length > visible.length && (
+          <button
+            type="button"
+            onClick={() => setLimit((l) => l + PAGE)}
+            className="min-h-12 w-full rounded-xl border border-border bg-card text-sm font-semibold hover:border-accent"
+          >
+            Pokaż więcej ({shown.length - visible.length})
+          </button>
         )}
       </div>
     </div>

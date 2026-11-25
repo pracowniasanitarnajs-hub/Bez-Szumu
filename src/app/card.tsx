@@ -1,4 +1,5 @@
 import type { RankedVideo } from "@/lib/ranking";
+import { VideoEmbed } from "./video-embed";
 
 const CLICKBAIT_STYLE: Record<RankedVideo["clickbait"], string> = {
   Niski: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
@@ -44,17 +45,7 @@ export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => vo
       </div>
 
       {/* Oficjalny odtwarzacz YouTube (embed) — pokazuje własną okładkę filmu, bez kopiowania grafiki. */}
-      <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-border">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${v.youtubeVideoId}`}
-          title={v.title}
-          loading="lazy"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="h-full w-full border-0"
-        />
-      </div>
+      <VideoEmbed videoId={v.youtubeVideoId} title={v.title} />
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         {v.format && (
