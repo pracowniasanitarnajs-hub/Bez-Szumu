@@ -80,3 +80,10 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - `GUEST_FULL_ACCESS` (domyślnie włączone): zalogowani widzą wszystko także po zakończeniu triala; `=false` włącza Paywall po trialu i podgląd 3 filmów (po wdrożeniu Stripe).
 - `MAX_USERS` (opcjonalne): limit miejsc w wersji próbnej; nowe konto ponad limit jest usuwane w `/auth/callback` (komunikat `/login?err=full`).
 - `/admin`: sekcja „Użytkownicy" (zarejestrowani, w trialu, subskrypcja/admin, po trialu, nowi z 24 h/7 dni, lista ostatnich).
+
+## Płatności i faktury (ustalone 2026-11-25, do wdrożenia)
+- Stripe Checkout (Apple Pay / Google Pay / karta; najpierw tryb testowy) -> webhook -> `profiles.subscription_status`. Plany: 15 zł/mies., 120 zł/rok. Przy płatności: zgoda na natychmiastowe świadczenie (prawo odstąpienia 14 dni), zbieranie NIP i adresu (opcjonalnie).
+- Faktury VAT: **Fakturownia przez API** (nie fakturowanie Stripe; KSeF). **Z NIP-em: automatycznie, wysyłka mailem przez Fakturownię.** Osoba prywatna: potwierdzenie ze Stripe + przycisk „Pobierz fakturę" w `/konto` (faktura na żądanie).
+- Zmienne (ustawia użytkownik w Render → Environment): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, identyfikatory cen, `FAKTUROWNIA_ACCOUNT`, `FAKTUROWNIA_API_TOKEN`.
+- Do potwierdzenia z księgową: faktury dla konsumentów tylko na żądanie?, kasa fiskalna/zwolnienie, VAT 23%/OSS, KSeF w Fakturowni.
+- Przy usuwaniu konta z aktywną subskrypcją: najpierw anulować ją w Stripe.
