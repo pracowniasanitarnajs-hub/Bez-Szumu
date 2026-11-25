@@ -11,7 +11,7 @@ export const COMPANY = {
   address: "ul. Akacjowa 6, 89-606 Charzykowy, Polska",
   nip: process.env.NEXT_PUBLIC_COMPANY_NIP || "5552138791",
   krs: process.env.NEXT_PUBLIC_COMPANY_KRS || TBD,
-  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || TBD,
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "bezszumu9@gmail.com",
   site: "bez-szumu.pl",
 };
 

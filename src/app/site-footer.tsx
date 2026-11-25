@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { COMPANY } from "@/lib/legal";
 
 const link = "underline hover:text-foreground";
 
@@ -18,15 +19,11 @@ export function SiteFooter() {
       </nav>
       <p>
         Oceny i streszczenia są generowane automatycznie przez AI. To subiektywna opinia o treści materiału, a nie o osobach, i może być korygowana przez redaktora. Serwis nie kopiuje ani nie przechowuje filmów: osadza oficjalny odtwarzacz YouTube i linkuje do oryginałów. Wszystkie nazwy, znaki i materiały należą do ich właścicieli.
-        {process.env.NEXT_PUBLIC_CONTACT_EMAIL && (
-          <>
-            {" "}Zauważyłeś błąd lub chcesz sprostowania albo usunięcia materiału?{" "}
-            <a className="underline" href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`}>
-              Napisz do nas
-            </a>
-            .
-          </>
-        )}
+        {" "}Zauważyłeś błąd lub chcesz sprostowania albo usunięcia materiału?{" "}
+        <a className="underline" href={`mailto:${COMPANY.email}`}>
+          Napisz do nas
+        </a>
+        .
       </p>
     </footer>
   );
