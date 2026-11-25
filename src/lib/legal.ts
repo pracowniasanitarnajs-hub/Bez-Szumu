@@ -2,7 +2,7 @@
 export const TERMS_VERSION = "2026-11-25";
 
 // Ustaw true, dopóki dokumenty nie zostaną sprawdzone przez prawnika (na stronach pojawia się adnotacja).
-export const LEGAL_DRAFT = true;
+export const LEGAL_DRAFT = false;
 
 export const COMPANY = {
   name: "Pracownia Sanitarna JS Sp. z o.o.",
