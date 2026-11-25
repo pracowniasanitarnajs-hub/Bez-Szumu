@@ -74,3 +74,9 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Sekret JWT w Supabase (Authentication → Providers → Apple → Secret Key) **wygasa 2027-05-27**. Odnowić najpóźniej ok. 2027-05-13:
   `node scripts/apple-secret.js secrets/AuthKey_DJZ7V872KQ.p8 C32DAM4ZU4 DJZ7V872KQ pl.bezszumu.web secrets/apple_client_secret.txt`
   następnie wkleić zawartość `secrets/apple_client_secret.txt` w Supabase i zapisać.
+
+## Wymagane logowanie i kontrola liczby użytkowników
+- `REQUIRE_LOGIN` (domyślnie włączone): niezalogowani widzą tylko stronę powitalną z przyciskiem logowania; ranking i /kanaly są dla zalogowanych. Wyłączenie: `REQUIRE_LOGIN=false`. Regulamin, Polityka prywatności i /login zawsze publiczne.
+- `GUEST_FULL_ACCESS` (domyślnie włączone): zalogowani widzą wszystko także po zakończeniu triala; `=false` włącza Paywall po trialu i podgląd 3 filmów (po wdrożeniu Stripe).
+- `MAX_USERS` (opcjonalne): limit miejsc w wersji próbnej; nowe konto ponad limit jest usuwane w `/auth/callback` (komunikat `/login?err=full`).
+- `/admin`: sekcja „Użytkownicy" (zarejestrowani, w trialu, subskrypcja/admin, po trialu, nowi z 24 h/7 dni, lista ostatnich).

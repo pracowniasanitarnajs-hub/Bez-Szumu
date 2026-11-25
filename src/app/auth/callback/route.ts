@@ -25,6 +25,23 @@ export async function GET(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Opcjonalny limit miejsc w wersji próbnej (MAX_USERS). Nowe konto ponad limit jest usuwane.
+  const maxUsers = parseInt(process.env.MAX_USERS ?? "", 10);
+  if (user && Number.isFinite(maxUsers)) {
+    try {
+      const db = createAdminClient();
+      const { count } = await db.from("profiles").select("id", { count: "exact", head: true });
+      const isNew = Date.now() - new Date(user.created_at).getTime() < 5 * 60e3;
+      if (isNew && (count ?? 0) > maxUsers) {
+        await db.auth.admin.deleteUser(user.id);
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${base}/login?err=full`);
+      }
+    } catch (e) {
+      console.error("[auth] limit check failed:", e instanceof Error ? e.message : e);
+    }
+  }
+
   const jar = await cookies();
   const accepted = jar.get("bs_terms")?.value === TERMS_VERSION;
 

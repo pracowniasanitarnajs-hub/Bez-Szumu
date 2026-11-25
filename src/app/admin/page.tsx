@@ -38,7 +38,7 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
   }
 
   const db = createAdminClient();
-  const [{ data: channels }, { data: videos }, { data: all }] = await Promise.all([
+  const [{ data: channels }, { data: videos }, { data: all }, { data: users }] = await Promise.all([
     db.from("channels").select("id, name, handle, active, youtube_channel_id").order("created_at"),
     db
       .from("videos")
@@ -49,7 +49,26 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
       .order("published_at", { ascending: false })
       .limit(100),
     db.from("videos").select("status"),
+    db
+      .from("profiles")
+      .select("email, subscription_status, trial_ends_at, created_at, is_admin")
+      .order("created_at", { ascending: false }),
   ]);
+
+  // Statystyki użytkowników (wersja próbna): ile osób się zarejestrowało i w jakim są stanie.
+  const now = Date.now();
+  const u = users ?? [];
+  const stats = {
+    total: u.length,
+    trial: u.filter((x) => x.subscription_status === "trialing" && new Date(x.trial_ends_at).getTime() > now).length,
+    active: u.filter((x) => x.subscription_status === "active" || x.is_admin).length,
+    expired: u.filter(
+      (x) => !x.is_admin && x.subscription_status !== "active" && new Date(x.trial_ends_at).getTime() <= now,
+    ).length,
+    last7: u.filter((x) => now - new Date(x.created_at).getTime() < 7 * 86400e3).length,
+    today: u.filter((x) => now - new Date(x.created_at).getTime() < 86400e3).length,
+  };
+  const maxUsers = process.env.MAX_USERS ? parseInt(process.env.MAX_USERS, 10) : null;
 
   const counts: Record<string, number> = {};
   for (const v of all ?? []) counts[v.status] = (counts[v.status] ?? 0) + 1;
@@ -72,6 +91,44 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
       </header>
 
       {sp.msg && <p className="rounded-lg bg-accent/10 p-3 text-sm">{String(sp.msg)}</p>}
+
+      <section className="rounded-2xl border border-border bg-card p-4">
+        <h2 className="mb-3 font-semibold">Użytkownicy (wersja próbna)</h2>
+        <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+          {[
+            ["Zarejestrowani", stats.total],
+            ["W okresie próbnym", stats.trial],
+            ["Subskrypcja/admin", stats.active],
+            ["Po okresie próbnym", stats.expired],
+          ].map(([label, n]) => (
+            <div key={String(label)} className="rounded-xl bg-accent/10 p-3">
+              <div className="text-2xl font-bold text-accent">{n}</div>
+              <div className="text-xs text-muted">{label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-sm text-muted">
+          Nowi: {stats.today} w ciągu 24 h, {stats.last7} w ciągu 7 dni.{" "}
+          {maxUsers ? `Limit miejsc: ${maxUsers} (wolnych: ${Math.max(0, maxUsers - stats.total)}).` : "Limit miejsc: brak (ustaw MAX_USERS w Render → Environment)."}
+        </p>
+        {u.length > 0 && (
+          <details className="mt-3 text-sm">
+            <summary className="cursor-pointer text-muted">Ostatnio zarejestrowani ({Math.min(15, u.length)})</summary>
+            <ul className="mt-2 space-y-1">
+              {u.slice(0, 15).map((x, i) => (
+                <li key={i} className="flex flex-wrap justify-between gap-2 border-b border-border/60 py-1">
+                  <span className="truncate">{x.email ?? "(brak e-maila)"}{x.is_admin ? " · admin" : ""}</span>
+                  <span className="text-xs text-muted">
+                    {new Date(x.created_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw", dateStyle: "short", timeStyle: "short" })}
+                    {" · trial do "}
+                    {new Date(x.trial_ends_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw" })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
 
       <section className="rounded-2xl border border-border bg-card p-4">
         <h2 className="mb-2 font-semibold">Przetwarzanie</h2>

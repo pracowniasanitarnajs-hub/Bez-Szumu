@@ -6,6 +6,7 @@ import { RankingList } from "./ranking-list";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { Paywall } from "./paywall";
+import { LoginWall } from "./login-wall";
 
 const GUEST_PREVIEW = 3;
 
@@ -36,14 +37,16 @@ export default function Home() {
 
 // Dostęp egzekwowany na serwerze: do przeglądarki trafia tylko to, co użytkownik może zobaczyć.
 async function RankingSection() {
-  // Tymczasowo wszyscy (także niezalogowani) widzą wszystko. Aby włączyć ograniczenie dla gości
-  // i paywall po triale, ustaw w Render → Environment: GUEST_FULL_ACCESS=false.
+  const access = await getAccess();
+
+  // Logowanie wymagane do wejścia (domyślnie). Wyłączysz: REQUIRE_LOGIN=false w Render → Environment.
+  const requireLogin = process.env.REQUIRE_LOGIN !== "false";
+  if (access.level === "guest" && requireLogin) return <LoginWall />;
+
+  // Dopóki nie ma płatności: GUEST_FULL_ACCESS (domyślnie włączone) = zalogowani widzą wszystko także po
+  // trialu. Ustaw GUEST_FULL_ACCESS=false, aby po trialu pokazywać Paywall i 3 filmy.
   const open = process.env.GUEST_FULL_ACCESS !== "false";
-  // Gdy strona jest otwarta, nie czekamy na sprawdzanie konta (szybsze przechodzenie między zakładkami).
-  const [{ items, demo }, access] = await Promise.all([
-    getRanking(),
-    open ? Promise.resolve({ level: "guest" as const }) : getAccess(),
-  ]);
+  const { items, demo } = await getRanking();
   const full = open || hasFullAccess(access);
   const visible = full
     ? items

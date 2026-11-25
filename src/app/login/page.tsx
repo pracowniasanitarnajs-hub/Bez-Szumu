@@ -44,7 +44,9 @@ async function ErrorNote({ searchParams }: { searchParams: Promise<{ [k: string]
     <p className="mt-4 rounded-lg bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300">
       {sp.err === "terms"
         ? "Aby się zalogować, zaznacz zgodę na Regulamin i Politykę prywatności."
-        : "Logowanie się nie powiodło. Spróbuj ponownie."}
+        : sp.err === "full"
+          ? "Limit miejsc w wersji próbnej został na razie wyczerpany. Spróbuj ponownie później."
+          : "Logowanie się nie powiodło. Spróbuj ponownie."}
     </p>
   );
 }
