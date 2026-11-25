@@ -26,7 +26,9 @@ export async function AccountBar() {
 
   return (
     <div className="ml-auto flex min-w-0 items-center gap-2">
-      <span className="hidden min-w-0 truncate text-xs text-muted sm:block">{access.email}</span>
+      <Link href="/konto" className="hidden min-w-0 truncate text-xs text-muted underline sm:block">
+        {access.email}
+      </Link>
       <span
         className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${
           access.level === "expired" ? "bg-rose-500/15 text-rose-700 dark:text-rose-300" : "bg-accent/10 text-accent"

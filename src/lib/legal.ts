@@ -1,0 +1,18 @@
+// Dane Usługodawcy i wersja dokumentów prawnych. Braki wyświetlają się jako "[do uzupełnienia]".
+const TBD = "[do uzupełnienia]";
+
+export const TERMS_VERSION = "2026-11-25";
+
+// Ustaw true, dopóki dokumenty nie zostaną sprawdzone przez prawnika (na stronach pojawia się adnotacja).
+export const LEGAL_DRAFT = true;
+
+export const COMPANY = {
+  name: "Pracownia Sanitarna JS Sp. z o.o.",
+  address: "ul. Akacjowa 6, 89-606 Charzykowy, Polska",
+  nip: process.env.NEXT_PUBLIC_COMPANY_NIP || TBD,
+  krs: process.env.NEXT_PUBLIC_COMPANY_KRS || TBD,
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || TBD,
+  site: "bez-szumu.pl",
+};
+
+export const PLANS = { monthly: "15 zł", yearly: "120 zł" };

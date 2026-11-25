@@ -8,7 +8,7 @@ const NAV = [
   { key: "kanaly", href: "/kanaly", label: "Kanały" },
 ] as const;
 
-export function SiteHeader({ active }: { active: "ranking" | "kanaly" }) {
+export function SiteHeader({ active }: { active: "ranking" | "kanaly" | "none" }) {
   return (
     <header className="border-b border-border">
       <div className="bg-white">

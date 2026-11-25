@@ -62,3 +62,9 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Ranking czytany po stronie serwera pełną listą (klucz service role); do przeglądarki trafia tylko to, co użytkownik może zobaczyć. RLS w bazie nadal chroni bezpośrednie wywołania API.
 
 - **Tymczasowo wszyscy (także niezalogowani) widzą wszystko** — `GUEST_FULL_ACCESS` (domyślnie włączone). Aby wprowadzić limit 3 filmów dla gości i paywall po triale: ustawić `GUEST_FULL_ACCESS=false` w Render → Environment.
+
+## Dokumenty prawne i konto (zaimplementowane, szkice do weryfikacji przez prawnika)
+- Strony `/regulamin` i `/polityka-prywatnosci` (treść w `src/app/regulamin`, `src/app/polityka-prywatnosci`), dane firmy i wersja w `src/lib/legal.ts` (`TERMS_VERSION`, `LEGAL_DRAFT`). Przy zmianie treści podnieść `TERMS_VERSION` — użytkownicy zaakceptują ponownie przy następnym logowaniu. Po akceptacji przez prawnika ustawić `LEGAL_DRAFT=false`.
+- Zgoda na /login (pole wyboru odblokowuje przyciski), ciasteczko `bs_terms`, zapis `profiles.terms_accepted_at/terms_version` w `/auth/callback` (migracja 0003). Bez zgody callback wylogowuje.
+- `/konto`: status konta i trwałe usunięcie konta (`/konto/usun` -> `auth.admin.deleteUser`, profil usuwa się kaskadowo). Przy Stripe: przed usunięciem anulować subskrypcję.
+- Zmienne firmowe: `NEXT_PUBLIC_COMPANY_NIP`, `NEXT_PUBLIC_COMPANY_KRS`, `NEXT_PUBLIC_CONTACT_EMAIL` (Render -> Environment).
