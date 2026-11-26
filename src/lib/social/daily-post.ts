@@ -57,13 +57,17 @@ export async function buildDailyPost(day: string): Promise<{ message: string; li
 
   const [y, m, d] = day.split("-");
   const best = items[0];
+  // Hook (pierwsze linijki widać przed „Zobacz więcej"). Gdy AI zawiedzie — prosty nagłówek.
+  const hook = (await makeHook(best).catch(() => null)) ?? `Który wywiad z wczoraj naprawdę warto obejrzeć? 👇`;
   const lines = [
-    `📊 Najlepsze wywiady z ${d}.${m}.${y}`,
+    hook,
+    "",
+    `⭐ Wywiad dnia: ${cut(best.title, 110)} (${best.channel}, ${fmtScore(best.score)}/10)`,
+    cut(best.summary[0] ?? "", 320),
+    "",
+    `📊 TOP ${items.length} z ${d}.${m}.${y}:`,
     "",
     items.map((v, i) => `${i + 1}. ${fmtScore(v.score)}/10 · ${v.channel}${v.guest ? ` · ${cut(v.guest, 60)}` : ""}\n${cut(v.title, 110)}`).join("\n\n"),
-    "",
-    `⭐ Wywiad dnia: ${cut(best.title, 110)} (${best.channel})`,
-    cut(best.summary[0] ?? "", 320),
     "",
     `Pełny ranking, wnioski i spis treści z minutami: ${SITE}`,
     "Oceny powstają automatycznie na podstawie treści rozmów.",
@@ -71,6 +75,43 @@ export async function buildDailyPost(day: string): Promise<{ message: string; li
     "#geopolityka #wywiady #BezSzumu",
   ];
   return { message: lines.join("\n").replace(/\n{3,}/g, "\n\n"), link: `https://www.youtube.com/watch?v=${best.id}` };
+}
+
+const HOOK_RULES = `Piszesz pierwsze 1–2 zdania posta na Facebooku serwisu „Bez Szumu", który poleca merytoryczne polskie wywiady geopolityczne.
+Cel: zatrzymać przewijanie i zachęcić do przeczytania posta, ale BEZ clickbaitu — to marka przeciw clickbaitom.
+Zasady:
+- Max 170 znaków łącznie. Po polsku, naturalnie, bez wielkich liter dla efektu, max 1 wykrzyknik, max 1 emoji (na końcu lub wcale).
+- Oprzyj się na najciekawszym KONKRECIE z podsumowania (liczba, zaskakująca teza, prognoza, mało znany fakt). Możesz użyć pytania.
+- Tezy przypisuj rozmówcy („Zdaniem …", „Gość przekonuje, że…"). Nie przedstawiaj opinii jako faktów.
+- Nie oceniaj ludzi ani ich intencji, bez słów typu: szok, kłamstwo, manipulacja, skandal, musisz zobaczyć.
+- Nie cytuj dosłownie tytułu filmu. Bez hashtagów i linków.
+Zwróć WYŁĄCZNIE tekst hooka.`;
+
+async function makeHook(v: { title: string; channel: string; guest: string | null; summary: string[] }): Promise<string | null> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return null;
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: process.env.AI_MODEL || "claude-sonnet-5-5",
+      max_tokens: 1500,
+      system: HOOK_RULES,
+      messages: [
+        {
+          role: "user",
+          content: `Kanał: ${v.channel}\nRozmówca: ${v.guest ?? "brak danych"}\nTytuł: ${v.title}\nPodsumowanie:\n- ${v.summary.join("\n- ")}`,
+        },
+      ],
+    }),
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  // Odpowiedź może zaczynać się blokiem „thinking" — bierzemy blok tekstowy.
+  const block = (json.content ?? []).find((c: any) => c.type === "text");
+  const text = String(block?.text ?? "").trim().replace(/^["„]|["”]$/g, "");
+  return text && text.length <= 220 ? text : null;
 }
 
 // Wywoływane przez cron: raz dziennie (po godzinie FB_POST_HOUR, domyślnie 8) tworzy szkic posta za wczoraj.
