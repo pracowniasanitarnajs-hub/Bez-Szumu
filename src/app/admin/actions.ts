@@ -6,6 +6,8 @@ import { updateTag } from "next/cache";
 import { ADMIN_COOKIE, isAdmin, passwordMatches, sessionToken } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { processVideos } from "@/lib/pipeline/process";
+import { ensureDailyPost, publishPost } from "@/lib/social/daily-post";
+import { facebookConfigured } from "@/lib/social/facebook";
 
 async function requireAdmin() {
   if (!(await isAdmin())) throw new Error("Brak uprawnień");
@@ -106,6 +108,40 @@ export async function toggleChannel(formData: FormData) {
   const { error } = await createAdminClient().from("channels").update({ active }).eq("id", id);
   if (error) throw error;
   done(active ? "Kanał włączony" : "Kanał wyłączony");
+}
+
+// ===== Facebook: posty dzienne =====
+export async function createPostNow() {
+  await requireAdmin();
+  const r = await ensureDailyPost({ force: true });
+  done(`Post za wczoraj: ${r}`);
+}
+
+export async function savePost(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const message = String(formData.get("message") ?? "").trim();
+  const link = String(formData.get("link") ?? "").trim() || null;
+  const intent = String(formData.get("intent") ?? "save");
+  if (!message) done("Treść posta nie może być pusta");
+  if (link && !/^https:\/\//.test(link)) done("Link musi zaczynać się od https://");
+  const db = createAdminClient();
+  if (intent === "skip") {
+    await db.from("social_posts").update({ status: "skipped" }).eq("id", id);
+    done("Post pominięty");
+  }
+  const { error } = await db.from("social_posts").update({ message, link, ...(intent === "publish" ? {} : { status: "draft" }) }).eq("id", id);
+  if (error) throw error;
+  if (intent === "publish") {
+    if (!facebookConfigured()) done("Facebook nie jest jeszcze podłączony (FACEBOOK_PAGE_ID i FACEBOOK_PAGE_TOKEN w Render)");
+    try {
+      await publishPost(id);
+    } catch (e) {
+      done(`Błąd publikacji: ${e instanceof Error ? e.message.slice(0, 200) : String(e)}`);
+    }
+    done("Opublikowano na Facebooku");
+  }
+  done("Zapisano szkic");
 }
 
 export async function runNow() {

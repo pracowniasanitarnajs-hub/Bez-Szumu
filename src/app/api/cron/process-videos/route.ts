@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { after } from "next/server";
 import { processVideos } from "@/lib/pipeline/process";
+import { ensureDailyPost } from "@/lib/social/daily-post";
 
 export const maxDuration = 300;
 
@@ -27,6 +28,13 @@ export async function POST(req: Request) {
       console.log("[cron] OK", JSON.stringify({ ...report, seconds: Math.round((Date.now() - started) / 1000) }));
     } catch (e) {
       console.error("[cron] BŁĄD", e instanceof Error ? e.message : String(e));
+    }
+    // Raz dziennie (po 8:00): szkic posta na Facebooka z rankingiem wczorajszych wywiadów.
+    try {
+      const r = await ensureDailyPost();
+      if (r !== "za wcześnie" && !r.startsWith("już jest")) console.log("[social] post dzienny:", r);
+    } catch (e) {
+      console.error("[social] BŁĄD", e instanceof Error ? e.message : String(e));
     }
   });
 

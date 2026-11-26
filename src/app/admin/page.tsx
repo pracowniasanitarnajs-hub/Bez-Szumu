@@ -2,7 +2,15 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { isAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { addChannel, login, logout, runNow, saveEditor, setStatus, toggleChannel } from "./actions";
+import { facebookConfigured } from "@/lib/social/facebook";
+import { addChannel, createPostNow, login, logout, runNow, saveEditor, savePost, setStatus, toggleChannel } from "./actions";
+
+const POST_STATUS: Record<string, string> = {
+  draft: "Szkic — czeka na akceptację",
+  published: "Opublikowany",
+  skipped: "Pominięty",
+  failed: "Błąd publikacji",
+};
 
 export const metadata: Metadata = { title: "Panel admina — Bez Szumu", robots: { index: false, follow: false } };
 export const maxDuration = 300;
@@ -38,7 +46,7 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
   }
 
   const db = createAdminClient();
-  const [{ data: channels }, { data: videos }, { data: all }, { data: users }] = await Promise.all([
+  const [{ data: channels }, { data: videos }, { data: all }, { data: users }, { data: posts }] = await Promise.all([
     db.from("channels").select("id, name, handle, active, youtube_channel_id").order("created_at"),
     db
       .from("videos")
@@ -53,7 +61,9 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
       .from("profiles")
       .select("email, subscription_status, trial_ends_at, created_at, is_admin")
       .order("created_at", { ascending: false }),
+    db.from("social_posts").select("id, day, message, link, status, error, external_id").order("day", { ascending: false }).limit(5),
   ]);
+  const fbReady = facebookConfigured();
 
   // Statystyki użytkowników (wersja próbna): ile osób się zarejestrowało i w jakim są stanie.
   const now = Date.now();
@@ -139,6 +149,58 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
           <button className={btnPrimary}>Sprawdź nowości teraz</button>
         </form>
         <p className="mt-2 text-xs text-muted">Trwa do kilku minut (pobiera transkrypcje i ocenia do 5 filmów).</p>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-4">
+        <h2 className="mb-1 font-semibold">Facebook — ranking dnia</h2>
+        <p className="mb-3 text-sm text-muted">
+          {fbReady
+            ? "Fanpage podłączony. "
+            : "Fanpage niepodłączony (ustaw FACEBOOK_PAGE_ID i FACEBOOK_PAGE_TOKEN w Render). "}
+          Codziennie po {process.env.FB_POST_HOUR ?? "8"}:00 powstaje szkic z TOP 5 wywiadów z poprzedniego dnia
+          {process.env.FB_AUTO_PUBLISH === "true" ? " i publikuje się automatycznie." : "; publikujesz go tutaj."}
+        </p>
+        <div className="space-y-4">
+          {(posts ?? []).map((p) => (
+            <form key={p.id} action={savePost} className="rounded-xl border border-border p-3">
+              <input type="hidden" name="id" value={p.id} />
+              <p className="mb-2 text-sm">
+                <strong>{new Date(p.day + "T12:00:00Z").toLocaleDateString("pl-PL")}</strong> · {POST_STATUS[p.status] ?? p.status}
+              </p>
+              {p.error && <p className="mb-2 text-xs text-rose-600">Błąd: {p.error}</p>}
+              {p.status === "skipped" && p.message.startsWith("(") ? null : (
+                <>
+                  <textarea
+                    name="message"
+                    defaultValue={p.message}
+                    rows={12}
+                    readOnly={p.status === "published"}
+                    className="w-full rounded-lg border border-border bg-background p-2 text-sm"
+                  />
+                  <input
+                    name="link"
+                    defaultValue={p.link ?? ""}
+                    placeholder="Link (podgląd filmu z YouTube)"
+                    readOnly={p.status === "published"}
+                    className={`${input} mt-2 w-full`}
+                  />
+                  {p.status !== "published" && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button name="intent" value="publish" className={btnPrimary} disabled={!fbReady}>
+                        Opublikuj na Facebooku
+                      </button>
+                      <button name="intent" value="save" className={btn}>Zapisz zmiany</button>
+                      <button name="intent" value="skip" className={btn}>Pomiń</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </form>
+          ))}
+        </div>
+        <form action={createPostNow} className="mt-3">
+          <button className={btn}>Utwórz szkic za wczoraj teraz</button>
+        </form>
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-4">
