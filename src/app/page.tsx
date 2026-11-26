@@ -7,6 +7,8 @@ import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { Paywall } from "./paywall";
 import { LoginWall } from "./login-wall";
+import { getMyRatings, getRatingStats } from "@/lib/user-ratings";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 const GUEST_PREVIEW = 3;
 
@@ -46,7 +48,11 @@ async function RankingSection() {
   // Dopóki nie ma płatności: GUEST_FULL_ACCESS (domyślnie włączone) = zalogowani widzą wszystko także po
   // trialu. Ustaw GUEST_FULL_ACCESS=false, aby po trialu pokazywać Paywall i 3 filmy.
   const open = process.env.GUEST_FULL_ACCESS !== "false";
-  const { items, demo } = await getRanking();
+  const [{ items, demo }, ratings] = await Promise.all([getRanking(), getRatingStats()]);
+  // Oceniać mogą zalogowani z dostępem do pełnej treści.
+  const { data: claimsData } = await (await createSupabaseServer()).auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  const myRatings = userId ? await getMyRatings(userId) : {};
   const full = open || hasFullAccess(access);
   const visible = full
     ? items
@@ -75,7 +81,7 @@ async function RankingSection() {
         <p className="mb-3 text-xs text-muted">Tryb demonstracyjny: dane przykładowe, baza nie jest jeszcze podłączona.</p>
       )}
 
-      <RankingList items={visible} />
+      <RankingList items={visible} ratings={ratings} myRatings={myRatings} canRate={!!userId && full} />
     </>
   );
 }

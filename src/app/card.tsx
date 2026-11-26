@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import type { RankedVideo } from "@/lib/ranking";
 import { VideoEmbed } from "./video-embed";
+import { UserRatingBox, UserRatingPanel, type Stats } from "./user-rating";
 
 const CLICKBAIT_STYLE: Record<RankedVideo["clickbait"], string> = {
   Niski: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
@@ -29,17 +33,41 @@ function fmt(t: number) {
   return `${h > 0 ? h + ":" : ""}${String(m).padStart(h > 0 ? 2 : 1, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => void }) {
+export function Card({
+  v,
+  onTag,
+  rating,
+  myRating,
+  canRate = false,
+}: {
+  v: RankedVideo;
+  onTag?: (tag: string) => void;
+  rating?: Stats;
+  myRating?: number;
+  canRate?: boolean;
+}) {
   const yt = `https://www.youtube.com/watch?v=${v.youtubeVideoId}`;
+  const [stats, setStats] = useState(rating);
+  const [mine, setMine] = useState(myRating);
+  const [open, setOpen] = useState(false);
   return (
     <article className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div
-          className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-accent/10 text-accent"
-          aria-label={`Ocena ${v.score} na 10`}
-        >
-          <span className="text-2xl font-bold leading-none">{v.score.toFixed(1)}</span>
-          <span className="text-[10px] uppercase tracking-wide opacity-70">/ 10</span>
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className="flex shrink-0 gap-2">
+          <div className="flex flex-col items-center">
+            <div
+              className="flex h-16 w-16 flex-col items-center justify-center rounded-xl bg-accent/10 text-accent"
+              aria-label={`Ocena Bez Szumu ${v.score} na 10`}
+            >
+              <span className="text-2xl font-bold leading-none">{v.score.toFixed(1)}</span>
+              <span className="text-[10px] uppercase tracking-wide opacity-70">/ 10</span>
+            </div>
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Nasza</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <UserRatingBox stats={stats} open={open} onToggle={() => setOpen((o) => !o)} />
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Widzowie</span>
+          </div>
         </div>
         <div className="min-w-0">
           <h2 className="text-base font-semibold leading-snug sm:text-lg">{v.title}</h2>
@@ -51,6 +79,19 @@ export function Card({ v, onTag }: { v: RankedVideo; onTag?: (tag: string) => vo
           </p>
         </div>
       </div>
+
+      {open && (
+        <UserRatingPanel
+          videoId={v.id}
+          canRate={canRate}
+          stats={stats}
+          mine={mine}
+          onChange={(s, m) => {
+            setStats(s);
+            setMine(m);
+          }}
+        />
+      )}
 
       {/* Oficjalny odtwarzacz YouTube (embed) — pokazuje własną okładkę filmu, bez kopiowania grafiki. */}
       <VideoEmbed videoId={v.youtubeVideoId} title={v.title} />

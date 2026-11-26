@@ -60,7 +60,17 @@ const chip = (active: boolean) =>
     active ? "border-accent bg-accent text-white dark:text-slate-900" : "border-border bg-card hover:border-accent"
   }`;
 
-export function RankingList({ items }: { items: RankedVideo[] }) {
+export function RankingList({
+  items,
+  ratings = {},
+  myRatings = {},
+  canRate = false,
+}: {
+  items: RankedVideo[];
+  ratings?: Record<string, { avg: number; count: number }>;
+  myRatings?: Record<string, number>;
+  canRate?: boolean;
+}) {
   const [range, setRange] = useState<Range>("all");
   const [sort, setSort] = useState<Sort>("score");
   const [tag, setTag] = useState<string | null>(null);
@@ -193,7 +203,16 @@ export function RankingList({ items }: { items: RankedVideo[] }) {
             Brak wywiadów dla wybranych filtrów.
           </p>
         ) : (
-          visible.map((v) => <Card key={v.id} v={v} onTag={(t) => setTag(t)} />)
+          visible.map((v) => (
+            <Card
+              key={v.id}
+              v={v}
+              onTag={(t) => setTag(t)}
+              rating={ratings[v.id]}
+              myRating={myRatings[v.id]}
+              canRate={canRate}
+            />
+          ))
         )}
         {shown.length > visible.length && (
           <button
