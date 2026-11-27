@@ -21,6 +21,13 @@ export function yesterdayWarsaw(now = Date.now()): string {
 
 const fmtScore = (n: number) => n.toFixed(1).replace(".", ",");
 const cut = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
+// Skraca do pełnych zdań (bez urywania w połowie); gdy pierwsze zdanie jest za długie — zwykłe cięcie.
+function cutSentences(s: string, n: number): string {
+  if (s.length <= n) return s;
+  const head = s.slice(0, n);
+  const end = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "));
+  return end > 80 ? head.slice(0, end + 1) : cut(s, n);
+}
 
 // Buduje treść posta z rankingiem filmów opublikowanych na YouTube danego dnia (tylko pozytywne wyróżnienia: TOP 5).
 export async function buildDailyPost(day: string): Promise<{ message: string; link: string } | null> {
@@ -63,7 +70,7 @@ export async function buildDailyPost(day: string): Promise<{ message: string; li
     hook,
     "",
     `⭐ Wywiad dnia: ${cut(best.title, 110)} (${best.channel}, ${fmtScore(best.score)}/10)`,
-    cut(best.summary[0] ?? "", 320),
+    cutSentences(best.summary[0] ?? "", 320),
     "",
     `📊 TOP ${items.length} z ${d}.${m}.${y}:`,
     "",
