@@ -87,4 +87,13 @@ Regulamin, polityka prywatności (RODO), zgoda na natychmiastowe świadczenie tr
 - Zmienne (ustawia użytkownik w Render → Environment): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, identyfikatory cen, `FAKTUROWNIA_ACCOUNT`, `FAKTUROWNIA_API_TOKEN`.
 - Do potwierdzenia z księgową: faktury dla konsumentów tylko na żądanie?, kasa fiskalna/zwolnienie, VAT 23%/OSS, KSeF w Fakturowni.
 - Przy usuwaniu konta z aktywną subskrypcją: najpierw anulować ją w Stripe.
+## Facebook — codzienny post z rankingiem (działa od 2026-11-27)
+- Fanpage „Bez-Szumu.pl" (page id `1432180849987132`), aplikacja Meta „Bez Szumu Autopost" (tryb Na żywo, bez portfolio firmowego — portfolio Bez-Szumu.pl ma ograniczenie od Meta).
+- Kod: `src/lib/social/` (daily-post.ts, facebook.ts), tabela `social_posts` (migracja 0007). Cron po `FB_POST_HOUR` (domyślnie 8) tworzy szkic TOP 5 z poprzedniego dnia + hook AI; `/admin`: edycja, „Wygeneruj od nowa", „Opublikuj", „Pomiń". `FB_AUTO_PUBLISH=true` publikuje bez akceptacji.
+- `FACEBOOK_PAGE_TOKEN` musi być **tokenem strony** (wynik `me/accounts` z długiego tokenu użytkownika; debugger: Typ Strona, Wygasa Nigdy). Token użytkownika daje błąd `(#200) ... page token`. Token przestaje działać m.in. po zmianie hasła FB lub usunięciu aplikacji w „Integracjach biznesowych" — wtedy wygenerować ponownie.
+
+## Ankieta kanałów i oceny widzów
+- `/kanaly`: comiesięczna ankieta propozycji nowych kanałów (migracja 0008, 3 głosy/os./mies.); kanały dodaje ręcznie admin w `/admin`, propozycja oznacza się jako dodana automatycznie.
+- Oceny widzów 1–10 przy filmach (migracja 0006, `user_ratings`).
+
 - **Stripe wdrożony w kodzie (2026-11-26)**, bez SDK (REST w `src/lib/stripe.ts`): `/platnosc/checkout` (zgoda na natychmiastowe świadczenie wymagana, NIP opcjonalny, `withdrawal_consent_at`), `/api/stripe/webhook` (zdarzenia `checkout.session.completed`, `customer.subscription.created/updated/deleted` → `profiles`), `/konto/portal` (portal klienta), `/konto/usun` anuluje subskrypcję. Migracja `0005_stripe.sql`. Przyciski aktywne dopiero gdy ustawione `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`. Fakturownia — następny krok.
