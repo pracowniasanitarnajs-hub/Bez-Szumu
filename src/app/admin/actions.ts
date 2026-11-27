@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { processVideos } from "@/lib/pipeline/process";
 import { ensureDailyPost, publishPost } from "@/lib/social/daily-post";
 import { facebookConfigured } from "@/lib/social/facebook";
+import { nameKey } from "@/lib/channel-poll";
 
 async function requireAdmin() {
   if (!(await isAdmin())) throw new Error("Brak uprawnień");
@@ -98,6 +99,9 @@ export async function addChannel(formData: FormData) {
       { onConflict: "youtube_channel_id" },
     );
   if (error) throw error;
+  // Jeśli kanał był w ankiecie — oznacz propozycję jako dodaną (brak tabeli ankiety nie przeszkadza).
+  const keys = [nameKey(ch.snippet.title), ch.snippet.customUrl ? nameKey(ch.snippet.customUrl) : ""].filter(Boolean);
+  await createAdminClient().from("channel_suggestions").update({ status: "added" }).in("name_key", keys).eq("status", "open");
   done(`Dodano kanał: ${ch.snippet.title}`);
 }
 
@@ -108,6 +112,17 @@ export async function toggleChannel(formData: FormData) {
   const { error } = await createAdminClient().from("channels").update({ active }).eq("id", id);
   if (error) throw error;
   done(active ? "Kanał włączony" : "Kanał wyłączony");
+}
+
+// ===== Ankieta kanałów =====
+export async function setSuggestionStatus(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const status = String(formData.get("status"));
+  if (!["open", "added", "rejected"].includes(status)) throw new Error("Zły status");
+  const { error } = await createAdminClient().from("channel_suggestions").update({ status }).eq("id", id);
+  if (error) throw error;
+  done(status === "added" ? "Propozycja oznaczona jako dodana" : status === "rejected" ? "Propozycja odrzucona" : "Propozycja przywrócona");
 }
 
 // ===== Facebook: posty dzienne =====

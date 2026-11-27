@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { isAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { facebookConfigured } from "@/lib/social/facebook";
-import { addChannel, createPostNow, login, logout, runNow, saveEditor, savePost, setStatus, toggleChannel } from "./actions";
+import { getPollForAdmin, monthLabel, pollMonth, previousMonth } from "@/lib/channel-poll";
+import { addChannel, createPostNow, login, logout, runNow, saveEditor, savePost, setStatus, setSuggestionStatus, toggleChannel } from "./actions";
 
 const POST_STATUS: Record<string, string> = {
   draft: "Szkic — czeka na akceptację",
@@ -64,6 +65,9 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
     db.from("social_posts").select("id, day, message, link, status, error, external_id").order("day", { ascending: false }).limit(5),
   ]);
   const fbReady = facebookConfigured();
+  const pollNow = pollMonth();
+  const pollPrev = previousMonth(pollNow);
+  const [pollCur, pollOld] = await Promise.all([getPollForAdmin(pollNow), getPollForAdmin(pollPrev)]);
 
   // Statystyki użytkowników (wersja próbna): ile osób się zarejestrowało i w jakim są stanie.
   const now = Date.now();
@@ -149,6 +153,53 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
           <button className={btnPrimary}>Sprawdź nowości teraz</button>
         </form>
         <p className="mt-2 text-xs text-muted">Trwa do kilku minut (pobiera transkrypcje i ocenia do 5 filmów).</p>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-4">
+        <h2 className="mb-1 font-semibold">Ankieta: propozycje nowych kanałów</h2>
+        <p className="mb-3 text-sm text-muted">
+          Użytkownicy proponują kanały na /kanaly (3 głosy na osobę w miesiącu). Sprawdź zwycięzców, dodaj kanał formularzem niżej
+          (link lub @nazwa), a potem oznacz propozycję jako „Dodany".
+        </p>
+        {[
+          { month: pollPrev, items: pollOld, title: `Zakończona: ${monthLabel(pollPrev)}` },
+          { month: pollNow, items: pollCur, title: `Trwa: ${monthLabel(pollNow)}` },
+        ].map((g) => (
+          <div key={g.month} className="mb-4">
+            <h3 className="mb-2 text-sm font-semibold">{g.title}</h3>
+            {g.items.length === 0 ? (
+              <p className="text-sm text-muted">Brak propozycji.</p>
+            ) : (
+              <ol className="space-y-2 text-sm">
+                {g.items.slice(0, 15).map((it, i) => (
+                  <li key={it.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+                    <span className={it.status === "rejected" ? "text-muted line-through" : ""}>
+                      {i + 1}. <strong>{it.name}</strong> — {it.votes} gł.
+                      {it.url && (
+                        <>
+                          {" · "}
+                          <a href={it.url} target="_blank" rel="noopener noreferrer" className="underline">link</a>
+                        </>
+                      )}
+                      {it.status === "added" && " · ✓ dodany"}
+                    </span>
+                    <span className="flex gap-2">
+                      {(["added", "rejected", "open"] as const)
+                        .filter((s) => s !== it.status)
+                        .map((s) => (
+                          <form key={s} action={setSuggestionStatus}>
+                            <input type="hidden" name="id" value={it.id} />
+                            <input type="hidden" name="status" value={s} />
+                            <button className={btn}>{s === "added" ? "Dodany" : s === "rejected" ? "Odrzuć" : "Przywróć"}</button>
+                          </form>
+                        ))}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        ))}
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-4">

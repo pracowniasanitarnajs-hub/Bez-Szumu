@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { getChannels } from "@/lib/channels";
+import { getChannels, type ChannelInfo } from "@/lib/channels";
+import { getPoll } from "@/lib/channel-poll";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import { ChannelPoll } from "./channel-poll";
 import { getAccess } from "@/lib/session";
 import { SiteHeader } from "../site-header";
 import { SiteFooter } from "../site-footer";
@@ -21,6 +24,9 @@ export default function ChannelsPage() {
           <p className="mt-2 text-muted">
             Na bieżąco sprawdzamy nowe filmy z tych polskich kanałów YouTube. Średnia ocena to średnia ocen merytorycznych opublikowanych rozmów.
           </p>
+          <a href="#ankieta" className="mt-2 inline-block text-sm font-semibold text-accent underline">
+            Brakuje kanału? Zaproponuj go w ankiecie ↓
+          </a>
         </section>
 
         <Suspense fallback={<p className="py-10 text-center text-muted">Ładowanie…</p>}>
@@ -39,11 +45,23 @@ async function ChannelList() {
     return <LoginWall title="Zaloguj się, aby zobaczyć listę kanałów" />;
   }
 
-  const channels = await getChannels();
-  if (channels.length === 0) {
-    return <p className="rounded-xl border border-border bg-card p-6 text-center text-muted">Brak kanałów.</p>;
-  }
+  const { data: claims } = await (await createSupabaseServer()).auth.getClaims();
+  const userId = (claims?.claims?.sub as string | undefined) ?? null;
+  const [channels, poll] = await Promise.all([getChannels(), getPoll(userId)]);
 
+  return (
+    <>
+      {channels.length === 0 ? (
+        <p className="rounded-xl border border-border bg-card p-6 text-center text-muted">Brak kanałów.</p>
+      ) : (
+        <ChannelCards channels={channels} />
+      )}
+      <ChannelPoll poll={poll} canVote={!!userId} />
+    </>
+  );
+}
+
+function ChannelCards({ channels }: { channels: ChannelInfo[] }) {
   return (
     <ul className="space-y-3">
       {channels.map((c) => (
