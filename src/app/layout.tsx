@@ -7,7 +7,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin",
 
 export const metadata: Metadata = {
   title: "Bez Szumu — ranking wywiadów geopolitycznych",
-  description: "Najbardziej merytoryczne polskie wywiady geopolityczne z YouTube: ocena, wnioski i znaczniki czasu. Bez clickbaitów.",
+  description: "Najlepsze polskie wywiady geopolityczne i historyczne z YouTube. Oceny, wnioski, spis treści z minutami. Bez clickbaitów.",
   applicationName: "Bez Szumu",
 };
 

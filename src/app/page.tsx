@@ -20,10 +20,10 @@ export default function Home() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <section className="mb-6">
           <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
-            Najlepsze polskie wywiady geopolityczne. Bez clickbaitów.
+            Najlepsze polskie wywiady geopolityczne i historyczne.
           </h1>
           <p className="mt-2 text-muted">
-            Codziennie oceniamy nowe rozmowy z polskich kanałów: merytoryka, zgodność tytułu z treścią, wnioski i znaczniki czasu.
+            Oceny, wnioski, spis treści z minutami. Bez clickbaitów. Codziennie sprawdzamy nowe rozmowy z polskich kanałów YouTube.
           </p>
         </section>
 

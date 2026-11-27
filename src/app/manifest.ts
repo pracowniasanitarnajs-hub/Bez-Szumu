@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Bez Szumu — ranking wywiadów geopolitycznych",
     short_name: "Bez Szumu",
-    description: "Najbardziej merytoryczne polskie wywiady geopolityczne, bez clickbaitów.",
+    description: "Najlepsze polskie wywiady geopolityczne i historyczne. Oceny, wnioski, spis treści. Bez clickbaitów.",
     start_url: "/",
     display: "standalone",
     lang: "pl",
