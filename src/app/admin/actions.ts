@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { ADMIN_COOKIE, isAdmin, passwordMatches, sessionToken } from "@/lib/admin-auth";
@@ -14,9 +14,16 @@ async function requireAdmin() {
   if (!(await isAdmin())) throw new Error("Brak uprawnień");
 }
 
-function done(msg: string): never {
+// Po akcji wracamy do tej samej zakładki/filtra panelu (z adresu strony, z której przyszło żądanie).
+async function done(msg: string): Promise<never> {
   updateTag("ranking");
-  redirect(`/admin?msg=${encodeURIComponent(msg)}`);
+  const params = new URLSearchParams();
+  try {
+    const ref = new URL((await headers()).get("referer") ?? "");
+    if (ref.pathname === "/admin") for (const k of ["tab", "st", "okres"]) { const v = ref.searchParams.get(k); if (v) params.set(k, v); }
+  } catch {}
+  params.set("msg", msg);
+  redirect(`/admin?${params.toString()}`);
 }
 
 export async function login(formData: FormData) {
@@ -50,7 +57,7 @@ export async function setStatus(formData: FormData) {
     .update({ status, updated_at: new Date().toISOString(), ...(status === "queued" ? { attempts: 0, error: null } : {}) })
     .eq("id", id);
   if (error) throw error;
-  done(status === "published" ? "Opublikowano" : "Zmieniono status");
+  return done(status === "published" ? "Opublikowano" : "Zmieniono status");
 }
 
 export async function saveEditor(formData: FormData) {
@@ -68,14 +75,14 @@ export async function saveEditor(formData: FormData) {
     .update({ editor_score, editor_comment: comment || null })
     .eq("video_id", id);
   if (error) throw error;
-  done("Zapisano korektę");
+  return done("Zapisano korektę");
 }
 
 // UC... (ID), link /channel/UC..., albo @handle / link /@handle (rozwiązywane przez YouTube API).
 export async function addChannel(formData: FormData) {
   await requireAdmin();
   const raw = String(formData.get("channel") ?? "").trim();
-  if (!raw) done("Podaj link lub ID kanału");
+  if (!raw) return done("Podaj link lub ID kanału");
 
   const key = process.env.YOUTUBE_API_KEY;
   if (!key) throw new Error("Brak YOUTUBE_API_KEY");
@@ -85,12 +92,12 @@ export async function addChannel(formData: FormData) {
   const handleMatch = /@([\w.\-]+)/.exec(raw);
   if (idMatch) query = `id=${idMatch[1]}`;
   else if (handleMatch) query = `forHandle=${encodeURIComponent("@" + handleMatch[1])}`;
-  else done("Nie rozpoznano kanału (podaj ID UC..., link /channel/... lub @nazwa)");
+  else return done("Nie rozpoznano kanału (podaj ID UC..., link /channel/... lub @nazwa)");
 
   const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&${query}&key=${key}`, { cache: "no-store" });
   const json = await res.json();
   const ch = json.items?.[0];
-  if (!ch) done("Nie znaleziono kanału na YouTube");
+  if (!ch) return done("Nie znaleziono kanału na YouTube");
 
   const { error } = await createAdminClient()
     .from("channels")
@@ -102,7 +109,7 @@ export async function addChannel(formData: FormData) {
   // Jeśli kanał był w ankiecie — oznacz propozycję jako dodaną (brak tabeli ankiety nie przeszkadza).
   const keys = [nameKey(ch.snippet.title), ch.snippet.customUrl ? nameKey(ch.snippet.customUrl) : ""].filter(Boolean);
   await createAdminClient().from("channel_suggestions").update({ status: "added" }).in("name_key", keys).eq("status", "open");
-  done(`Dodano kanał: ${ch.snippet.title}`);
+  return done(`Dodano kanał: ${ch.snippet.title}`);
 }
 
 export async function toggleChannel(formData: FormData) {
@@ -111,7 +118,7 @@ export async function toggleChannel(formData: FormData) {
   const active = String(formData.get("active")) === "true";
   const { error } = await createAdminClient().from("channels").update({ active }).eq("id", id);
   if (error) throw error;
-  done(active ? "Kanał włączony" : "Kanał wyłączony");
+  return done(active ? "Kanał włączony" : "Kanał wyłączony");
 }
 
 // ===== Ankieta kanałów =====
@@ -122,14 +129,14 @@ export async function setSuggestionStatus(formData: FormData) {
   if (!["open", "added", "rejected"].includes(status)) throw new Error("Zły status");
   const { error } = await createAdminClient().from("channel_suggestions").update({ status }).eq("id", id);
   if (error) throw error;
-  done(status === "added" ? "Propozycja oznaczona jako dodana" : status === "rejected" ? "Propozycja odrzucona" : "Propozycja przywrócona");
+  return done(status === "added" ? "Propozycja oznaczona jako dodana" : status === "rejected" ? "Propozycja odrzucona" : "Propozycja przywrócona");
 }
 
 // ===== Facebook: posty dzienne =====
 export async function createPostNow() {
   await requireAdmin();
   const r = await ensureDailyPost({ force: true });
-  done(`Post za wczoraj: ${r}`);
+  return done(`Post za wczoraj: ${r}`);
 }
 
 export async function savePost(formData: FormData) {
@@ -138,32 +145,32 @@ export async function savePost(formData: FormData) {
   const message = String(formData.get("message") ?? "").trim();
   const link = String(formData.get("link") ?? "").trim() || null;
   const intent = String(formData.get("intent") ?? "save");
-  if (intent === "regenerate") done(`Post: ${await rebuildPost(id)}`);
-  if (!message) done("Treść posta nie może być pusta");
-  if (link && !/^https:\/\//.test(link)) done("Link musi zaczynać się od https://");
+  if (intent === "regenerate") return done(`Post: ${await rebuildPost(id)}`);
+  if (!message) return done("Treść posta nie może być pusta");
+  if (link && !/^https:\/\//.test(link)) return done("Link musi zaczynać się od https://");
   const db = createAdminClient();
   if (intent === "skip") {
     await db.from("social_posts").update({ status: "skipped" }).eq("id", id);
-    done("Post pominięty");
+    return done("Post pominięty");
   }
   const { error } = await db.from("social_posts").update({ message, link, ...(intent === "publish" ? {} : { status: "draft" }) }).eq("id", id);
   if (error) throw error;
   if (intent === "publish") {
-    if (!facebookConfigured()) done("Facebook nie jest jeszcze podłączony (FACEBOOK_PAGE_ID i FACEBOOK_PAGE_TOKEN w Render)");
+    if (!facebookConfigured()) return done("Facebook nie jest jeszcze podłączony (FACEBOOK_PAGE_ID i FACEBOOK_PAGE_TOKEN w Render)");
     try {
       await publishPost(id);
     } catch (e) {
-      done(`Błąd publikacji: ${e instanceof Error ? e.message.slice(0, 200) : String(e)}`);
+      return done(`Błąd publikacji: ${e instanceof Error ? e.message.slice(0, 200) : String(e)}`);
     }
-    done("Opublikowano na Facebooku");
+    return done("Opublikowano na Facebooku");
   }
-  done("Zapisano szkic");
+  return done("Zapisano szkic");
 }
 
 export async function runNow() {
   await requireAdmin();
   const r = await processVideos();
-  done(
+  return done(
     `Sprawdzono: nowe ${r.discovered}, pominięte ${r.skipped}, przetworzone ${r.processed}, błędy ${r.failed}` +
       (r.errors.length ? ` (${r.errors[0].slice(0, 120)})` : ""),
   );
