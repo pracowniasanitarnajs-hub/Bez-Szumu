@@ -6,7 +6,7 @@ import { updateTag } from "next/cache";
 import { ADMIN_COOKIE, isAdmin, passwordMatches, sessionToken } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { processVideos } from "@/lib/pipeline/process";
-import { ensureDailyPost, publishPost } from "@/lib/social/daily-post";
+import { ensureDailyPost, publishPost, rebuildPost } from "@/lib/social/daily-post";
 import { facebookConfigured } from "@/lib/social/facebook";
 import { nameKey } from "@/lib/channel-poll";
 
@@ -138,6 +138,7 @@ export async function savePost(formData: FormData) {
   const message = String(formData.get("message") ?? "").trim();
   const link = String(formData.get("link") ?? "").trim() || null;
   const intent = String(formData.get("intent") ?? "save");
+  if (intent === "regenerate") done(`Post: ${await rebuildPost(id)}`);
   if (!message) done("Treść posta nie może być pusta");
   if (link && !/^https:\/\//.test(link)) done("Link musi zaczynać się od https://");
   const db = createAdminClient();

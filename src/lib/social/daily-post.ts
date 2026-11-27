@@ -151,6 +151,22 @@ export async function ensureDailyPost(opts: { force?: boolean } = {}): Promise<s
   return "szkic";
 }
 
+// Generuje treść szkicu od nowa (nowy hook z AI, aktualne oceny). Opublikowanych postów nie rusza.
+export async function rebuildPost(id: string): Promise<string> {
+  const db = createAdminClient();
+  const { data: p, error } = await db.from("social_posts").select("day, status").eq("id", id).single();
+  if (error) throw error;
+  if (p.status === "published") return "post jest już opublikowany";
+  const post = await buildDailyPost(p.day);
+  if (!post) return "brak filmów z tego dnia";
+  const { error: e2 } = await db
+    .from("social_posts")
+    .update({ message: post.message, link: post.link, status: "draft", error: null })
+    .eq("id", id);
+  if (e2) throw e2;
+  return "wygenerowano od nowa";
+}
+
 export async function publishPost(id: string): Promise<void> {
   const db = createAdminClient();
   const { data: p, error } = await db.from("social_posts").select("message, link, status").eq("id", id).single();

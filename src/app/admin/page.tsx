@@ -241,6 +241,9 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
                         Opublikuj na Facebooku
                       </button>
                       <button name="intent" value="save" className={btn}>Zapisz zmiany</button>
+                      <button name="intent" value="regenerate" className={btn} formNoValidate>
+                        Wygeneruj od nowa
+                      </button>
                       <button name="intent" value="skip" className={btn}>Pomiń</button>
                     </div>
                   )}
