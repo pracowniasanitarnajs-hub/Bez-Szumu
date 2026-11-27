@@ -213,7 +213,8 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
         </p>
         <div className="space-y-4">
           {(posts ?? []).map((p) => (
-            <form key={p.id} action={savePost} className="rounded-xl border border-border p-3">
+            // Klucz zależy od treści: po „Wygeneruj od nowa" pola pokazują nowy tekst, a nie stary z przeglądarki.
+            <form key={`${p.id}:${p.status}:${p.message.length}:${p.message.slice(0, 40)}`} action={savePost} className="rounded-xl border border-border p-3">
               <input type="hidden" name="id" value={p.id} />
               <p className="mb-2 text-sm">
                 <strong>{new Date(p.day + "T12:00:00Z").toLocaleDateString("pl-PL")}</strong> · {POST_STATUS[p.status] ?? p.status}
