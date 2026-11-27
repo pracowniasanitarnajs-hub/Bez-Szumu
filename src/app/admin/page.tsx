@@ -52,7 +52,7 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
     db
       .from("videos")
       .select(
-        "id, title, status, duration_seconds, published_at, error, youtube_video_id, channels(name), analyses(ai_score, editor_score, editor_comment, clickbait_level, guest, tags, summary)",
+        "id, title, status, duration_seconds, published_at, error, youtube_video_id, channels(name), analyses(ai_score, editor_score, editor_comment, clickbait_level, guest, tags, summary, created_at)",
       )
       .in("status", ["pending", "published", "failed", "queued", "processing"])
       .order("published_at", { ascending: false })
@@ -294,6 +294,17 @@ async function Content({ searchParams }: { searchParams: Promise<{ [k: string]: 
                   <h3 className="font-medium leading-snug">{v.title}</h3>
                   <p className="mt-1 text-xs text-muted">
                     {v.channels?.name} · {v.duration_seconds ? Math.round(v.duration_seconds / 60) + " min" : ""} ·{" "}
+                    {v.published_at && (
+                      <>
+                        film z <strong>{new Date(v.published_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw" })}</strong> ·{" "}
+                      </>
+                    )}
+                    {a?.created_at && (
+                      <>
+                        oceniono{" "}
+                        {new Date(a.created_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw", dateStyle: "short", timeStyle: "short" })} ·{" "}
+                      </>
+                    )}
                     <a className="underline" target="_blank" rel="noopener noreferrer" href={`https://www.youtube.com/watch?v=${v.youtube_video_id}`}>YouTube</a>
                   </p>
                   {v.error && <p className="mt-1 text-xs text-rose-600">Błąd: {v.error}</p>}
